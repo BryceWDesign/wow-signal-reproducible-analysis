@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "dataset_id": "wow-signal-evidence-claims-v1",
+  "title": "Evidence-bound Wow! signal claim ledger",
+  "description": "A machine-readable claim graph that separates direct observations, reproducible analyses, compatibility statements, interpretive summaries, and unsupported conclusions.",
+  "rights_statement": "The local claim ledger is original project metadata licensed with the repository. Rights in cited external publications, standards, and webpages remain with their respective authors and publishers.",
+  "artifacts": [
+    {
+      "path": "data/reference/claim_ledger.json",
+      "sha256": "724b09c2f5ba8f5217fb237c01819af315ac67173c572b7ac4d6a866cc9ec98c",
+      "media_type": "application/json",
+      "description": "Validated evidence records, claim classifications, verdicts, dependencies, and limitations.",
+      "record_count": 12
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "ehman-wow-30th-report",
+      "creator": "Jerry R. Ehman",
+      "title": "The Big Ear Wow! Signal: What We Know and Don't Know About It After 30 Years",
+      "publisher": "Ohio State University Radio Observatory / Big Ear",
+      "url": "https://www.bigear.org/Wow30th/wow30th.htm",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Primary historical source for the surviving observation, acquisition timing, and interpretive limits.",
+      "supports": [
+        "printer sequence context",
+        "beam-transit interpretation",
+        "limits of retained modulation evidence"
+      ]
+    },
+    {
+      "source_id": "itu-r-m1677-1",
+      "creator": "International Telecommunication Union Radiocommunication Sector",
+      "title": "Recommendation ITU-R M.1677-1: International Morse code",
+      "publisher": "International Telecommunication Union",
+      "url": "https://www.itu.int/rec/R-REC-M.1677-1-200910-I/en",
+      "publication_date": "2009-10-03",
+      "accessed_date": "2026-08-03",
+      "role": "Authoritative source for printable International Morse assignments used by the local registry.",
+      "supports": [
+        "question mark assignment",
+        "comma assignment",
+        "International Morse reference status"
+      ]
+    },
+    {
+      "source_id": "nrao-hi-rest-frequency",
+      "creator": "National Radio Astronomy Observatory",
+      "title": "The Impact of Real-Time RFI Blanking on H I 21 cm Observations",
+      "publisher": "NRAO Science Site",
+      "url": "https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/rfi-blanking-at-l-band/real-time-rfi-blanking-951-1431mhz",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Technical source for the neutral-hydrogen 21 cm rest frequency used by the local frequency context.",
+      "supports": [
+        "neutral-hydrogen line identity",
+        "neutral-hydrogen rest frequency"
+      ]
+    }
+  ]
+}
