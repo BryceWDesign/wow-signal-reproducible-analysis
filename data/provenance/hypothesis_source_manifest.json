@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "dataset_id": "wow-signal-hypothesis-matrix-v1",
+  "title": "Evidence-bound Wow! signal hypothesis matrix",
+  "description": "A machine-readable matrix separating supported shape models, compatible source functions, unresolved origin discrimination, and unestablished symbolic or extraterrestrial claims.",
+  "rights_statement": "The local hypothesis matrix is original project metadata licensed with the repository. Rights in cited external publications and webpages remain with their respective authors and publishers.",
+  "artifacts": [
+    {
+      "path": "data/reference/hypothesis_matrix.json",
+      "sha256": "157433dc26e1b98d501b5ade72134c21d19293124609007845622cf593553cc6",
+      "media_type": "application/json",
+      "description": "Validated hypotheses, scopes, evidence-bound statuses, rationale, strengthening conditions, weakening conditions, and limitations.",
+      "record_count": 5
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "ehman-wow-30th-report",
+      "creator": "Jerry R. Ehman",
+      "title": "The Big Ear Wow! Signal: What We Know and Don't Know About It After 30 Years",
+      "publisher": "Ohio State University Radio Observatory / Big Ear",
+      "url": "https://www.bigear.org/Wow30th/wow30th.htm",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Primary historical source for the surviving observation, acquisition timing, beam-transit interpretation, and limits of the retained measurements.",
+      "supports": [
+        "beam-transit compatibility",
+        "coarse temporal sampling",
+        "limits on recovering modulation or transmitter intent"
+      ]
+    },
+    {
+      "source_id": "itu-r-m1677-1",
+      "creator": "International Telecommunication Union Radiocommunication Sector",
+      "title": "Recommendation ITU-R M.1677-1: International Morse code",
+      "publisher": "International Telecommunication Union",
+      "url": "https://www.itu.int/rec/R-REC-M.1677-1-200910-I/en",
+      "publication_date": "2009-10-03",
+      "accessed_date": "2026-08-03",
+      "role": "Authoritative source for the International Morse assignments used in the symbolic correspondence analysis.",
+      "supports": [
+        "question mark assignment",
+        "comma assignment",
+        "International Morse reference status"
+      ]
+    }
+  ]
+}
