@@ -15,6 +15,11 @@ from wow_signal_analysis.analysis_snapshot import (
     AnalysisSnapshot,
 )
 from wow_signal_analysis.report import build_analysis_report
+from wow_signal_analysis.visualization import (
+    BEAM_FIT_FIGURE_ID,
+    MODEL_COMPARISON_FIGURE_ID,
+    build_analysis_figures,
+)
 
 ANALYSIS_ARTIFACT_BUNDLE_ID: Final = "wow-signal-analysis-artifacts-v1"
 ANALYSIS_ARTIFACT_DIRECTORY: Final = PurePosixPath("artifacts/generated")
@@ -29,6 +34,18 @@ ANALYSIS_REPORT_ARTIFACT_PATH: Final = (
 )
 ANALYSIS_REPORT_CHECKSUM_PATH: Final = (
     ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.sha256"
+)
+ANALYSIS_BEAM_FIT_FIGURE_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.svg"
+)
+ANALYSIS_BEAM_FIT_CHECKSUM_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.sha256"
+)
+ANALYSIS_MODEL_COMPARISON_FIGURE_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.svg"
+)
+ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.sha256"
 )
 
 _IDENTIFIER_PATTERN: Final = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -84,7 +101,7 @@ class GeneratedArtifact:
 
 @dataclass(frozen=True, slots=True)
 class AnalysisArtifactBundle:
-    """Canonical snapshot, report, and detached SHA-256 checksum files."""
+    """Canonical snapshot, report, figures, and detached checksum files."""
 
     bundle_id: str
     analysis_id: str
@@ -92,6 +109,10 @@ class AnalysisArtifactBundle:
     checksum: GeneratedArtifact
     report: GeneratedArtifact
     report_checksum: GeneratedArtifact
+    beam_fit_figure: GeneratedArtifact
+    beam_fit_checksum: GeneratedArtifact
+    model_comparison_figure: GeneratedArtifact
+    model_comparison_checksum: GeneratedArtifact
 
     def __post_init__(self) -> None:
         if not _IDENTIFIER_PATTERN.fullmatch(self.bundle_id):
@@ -109,6 +130,7 @@ class AnalysisArtifactBundle:
 
         self._validate_snapshot_artifacts()
         self._validate_report_artifacts()
+        self._validate_figure_artifacts()
 
     @property
     def snapshot_checksum(self) -> GeneratedArtifact:
@@ -125,6 +147,10 @@ class AnalysisArtifactBundle:
             self.checksum,
             self.report,
             self.report_checksum,
+            self.beam_fit_figure,
+            self.beam_fit_checksum,
+            self.model_comparison_figure,
+            self.model_comparison_checksum,
         )
 
     @property
@@ -152,39 +178,26 @@ class AnalysisArtifactBundle:
         return matches[0]
 
     def _validate_snapshot_artifacts(self) -> None:
-        if self.snapshot.relative_path != ANALYSIS_SNAPSHOT_ARTIFACT_PATH:
-            raise ArtifactGenerationError(
-                "snapshot artifact path does not match the canonical path"
-            )
-        if self.snapshot.media_type != "application/json":
-            raise ArtifactGenerationError(
-                "snapshot artifact media_type must be application/json"
-            )
-
-        if self.checksum.relative_path != ANALYSIS_SNAPSHOT_CHECKSUM_PATH:
-            raise ArtifactGenerationError(
-                "snapshot checksum path does not match the canonical path"
-            )
-        if self.checksum.media_type != "text/plain":
-            raise ArtifactGenerationError(
-                "snapshot checksum media_type must be text/plain"
-            )
-
-        expected_checksum = _checksum_content(self.snapshot)
-        if self.checksum.content != expected_checksum:
-            raise ArtifactGenerationError(
-                "snapshot checksum does not match the snapshot digest"
-            )
+        _validate_primary_artifact(
+            self.snapshot,
+            expected_path=ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
+            expected_media_type="application/json",
+            label="snapshot artifact",
+        )
+        _validate_checksum_artifact(
+            self.checksum,
+            source=self.snapshot,
+            expected_path=ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
+            label="snapshot checksum",
+        )
 
     def _validate_report_artifacts(self) -> None:
-        if self.report.relative_path != ANALYSIS_REPORT_ARTIFACT_PATH:
-            raise ArtifactGenerationError(
-                "report artifact path does not match the canonical path"
-            )
-        if self.report.media_type != "text/markdown":
-            raise ArtifactGenerationError(
-                "report artifact media_type must be text/markdown"
-            )
+        _validate_primary_artifact(
+            self.report,
+            expected_path=ANALYSIS_REPORT_ARTIFACT_PATH,
+            expected_media_type="text/markdown",
+            label="report artifact",
+        )
 
         try:
             report_text = self.report.content.decode("utf-8")
@@ -206,20 +219,38 @@ class AnalysisArtifactBundle:
                 "report artifact must use LF line endings"
             )
 
-        if self.report_checksum.relative_path != ANALYSIS_REPORT_CHECKSUM_PATH:
-            raise ArtifactGenerationError(
-                "report checksum path does not match the canonical path"
-            )
-        if self.report_checksum.media_type != "text/plain":
-            raise ArtifactGenerationError(
-                "report checksum media_type must be text/plain"
-            )
+        _validate_checksum_artifact(
+            self.report_checksum,
+            source=self.report,
+            expected_path=ANALYSIS_REPORT_CHECKSUM_PATH,
+            label="report checksum",
+        )
 
-        expected_checksum = _checksum_content(self.report)
-        if self.report_checksum.content != expected_checksum:
-            raise ArtifactGenerationError(
-                "report checksum does not match the report digest"
-            )
+    def _validate_figure_artifacts(self) -> None:
+        _validate_svg_artifact(
+            self.beam_fit_figure,
+            expected_path=ANALYSIS_BEAM_FIT_FIGURE_PATH,
+            expected_figure_id=BEAM_FIT_FIGURE_ID,
+            label="beam-fit figure",
+        )
+        _validate_checksum_artifact(
+            self.beam_fit_checksum,
+            source=self.beam_fit_figure,
+            expected_path=ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
+            label="beam-fit checksum",
+        )
+        _validate_svg_artifact(
+            self.model_comparison_figure,
+            expected_path=ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
+            expected_figure_id=MODEL_COMPARISON_FIGURE_ID,
+            label="model-comparison figure",
+        )
+        _validate_checksum_artifact(
+            self.model_comparison_checksum,
+            source=self.model_comparison_figure,
+            expected_path=ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+            label="model-comparison checksum",
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,7 +296,7 @@ class ArtifactWriteResult:
 def build_analysis_artifact_bundle(
     snapshot: AnalysisSnapshot,
 ) -> AnalysisArtifactBundle:
-    """Serialize the snapshot and report with detached checksums."""
+    """Serialize the snapshot, report, figures, and detached checksums."""
 
     if not isinstance(snapshot, AnalysisSnapshot):
         raise ArtifactGenerationError(
@@ -273,35 +304,52 @@ def build_analysis_artifact_bundle(
         )
 
     rendered_report = build_analysis_report(snapshot)
+    figures = build_analysis_figures(snapshot)
 
     snapshot_artifact = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
         media_type="application/json",
         content=snapshot.to_json().encode("utf-8"),
     )
-    snapshot_checksum = GeneratedArtifact(
-        relative_path=ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
-        media_type="text/plain",
-        content=_checksum_content(snapshot_artifact),
-    )
     report_artifact = GeneratedArtifact(
         relative_path=ANALYSIS_REPORT_ARTIFACT_PATH,
         media_type="text/markdown",
         content=rendered_report.content,
     )
-    report_checksum = GeneratedArtifact(
-        relative_path=ANALYSIS_REPORT_CHECKSUM_PATH,
-        media_type="text/plain",
-        content=_checksum_content(report_artifact),
+    beam_fit_figure = GeneratedArtifact(
+        relative_path=ANALYSIS_BEAM_FIT_FIGURE_PATH,
+        media_type="image/svg+xml",
+        content=figures.beam_fit.content,
+    )
+    model_comparison_figure = GeneratedArtifact(
+        relative_path=ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
+        media_type="image/svg+xml",
+        content=figures.model_comparison.content,
     )
 
     return AnalysisArtifactBundle(
         bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
         analysis_id=snapshot.analysis_id,
         snapshot=snapshot_artifact,
-        checksum=snapshot_checksum,
+        checksum=_checksum_artifact(
+            snapshot_artifact,
+            ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
+        ),
         report=report_artifact,
-        report_checksum=report_checksum,
+        report_checksum=_checksum_artifact(
+            report_artifact,
+            ANALYSIS_REPORT_CHECKSUM_PATH,
+        ),
+        beam_fit_figure=beam_fit_figure,
+        beam_fit_checksum=_checksum_artifact(
+            beam_fit_figure,
+            ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
+        ),
+        model_comparison_figure=model_comparison_figure,
+        model_comparison_checksum=_checksum_artifact(
+            model_comparison_figure,
+            ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+        ),
     )
 
 
@@ -391,6 +439,104 @@ def verify_written_analysis_artifacts(
         results.append(_result_for_written_artifact(artifact, destination))
 
     return tuple(results)
+
+
+def _validate_primary_artifact(
+    artifact: GeneratedArtifact,
+    *,
+    expected_path: PurePosixPath,
+    expected_media_type: str,
+    label: str,
+) -> None:
+    if artifact.relative_path != expected_path:
+        raise ArtifactGenerationError(
+            f"{label} path does not match the canonical path"
+        )
+    if artifact.media_type != expected_media_type:
+        raise ArtifactGenerationError(
+            f"{label} media_type must be {expected_media_type}"
+        )
+
+
+def _validate_checksum_artifact(
+    checksum: GeneratedArtifact,
+    *,
+    source: GeneratedArtifact,
+    expected_path: PurePosixPath,
+    label: str,
+) -> None:
+    _validate_primary_artifact(
+        checksum,
+        expected_path=expected_path,
+        expected_media_type="text/plain",
+        label=label,
+    )
+    if checksum.content != _checksum_content(source):
+        raise ArtifactGenerationError(
+            f"{label} does not match the source digest"
+        )
+
+
+def _validate_svg_artifact(
+    artifact: GeneratedArtifact,
+    *,
+    expected_path: PurePosixPath,
+    expected_figure_id: str,
+    label: str,
+) -> None:
+    _validate_primary_artifact(
+        artifact,
+        expected_path=expected_path,
+        expected_media_type="image/svg+xml",
+        label=label,
+    )
+
+    try:
+        svg = artifact.content.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ArtifactGenerationError(
+            f"{label} must contain valid UTF-8"
+        ) from error
+
+    if not svg.startswith('<svg xmlns="http://www.w3.org/2000/svg"'):
+        raise ArtifactGenerationError(
+            f"{label} must begin with the canonical SVG root"
+        )
+    if not svg.endswith("</svg>\n") or svg.endswith("</svg>\n\n"):
+        raise ArtifactGenerationError(
+            f"{label} must end with exactly one line terminator"
+        )
+    if "\r" in svg:
+        raise ArtifactGenerationError(
+            f"{label} must use LF line endings"
+        )
+    if "<script" in svg.lower():
+        raise ArtifactGenerationError(
+            f"{label} must not contain executable scripts"
+        )
+    if " href=" in svg.lower() or "xlink:href" in svg.lower():
+        raise ArtifactGenerationError(
+            f"{label} must not reference external resources"
+        )
+    if f'id="{expected_figure_id}-title"' not in svg:
+        raise ArtifactGenerationError(
+            f"{label} does not contain its canonical accessible title ID"
+        )
+    if f'id="{expected_figure_id}-description"' not in svg:
+        raise ArtifactGenerationError(
+            f"{label} does not contain its canonical accessible description ID"
+        )
+
+
+def _checksum_artifact(
+    source: GeneratedArtifact,
+    checksum_path: PurePosixPath,
+) -> GeneratedArtifact:
+    return GeneratedArtifact(
+        relative_path=checksum_path,
+        media_type="text/plain",
+        content=_checksum_content(source),
+    )
 
 
 def _checksum_content(artifact: GeneratedArtifact) -> bytes:
