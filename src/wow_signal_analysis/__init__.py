@@ -1,4 +1,4 @@
-"""Public package identity and canonical measurement API."""
+"""Public package identity, measurements, and provenance API."""
 
 from typing import Final
 
@@ -12,6 +12,18 @@ from wow_signal_analysis.measurements import (
     decode_printer_sequence,
     decode_printer_symbol,
 )
+from wow_signal_analysis.provenance import (
+    ArtifactStatus,
+    ArtifactVerification,
+    DatasetArtifact,
+    ProvenanceError,
+    SourceManifest,
+    SourceReference,
+    load_source_manifest,
+    require_verified_artifacts,
+    sha256_file,
+    verify_manifest_artifacts,
+)
 
 DISPLAY_NAME: Final = "Reproducible Analysis of the Wow! Signal"
 PROJECT_SLUG: Final = "wow-signal-reproducible-analysis"
@@ -23,10 +35,20 @@ __all__ = [
     "WOW_INTEGRATION_SECONDS",
     "WOW_PRINTER_SEQUENCE",
     "WOW_SAMPLE_CADENCE_SECONDS",
+    "ArtifactStatus",
+    "ArtifactVerification",
+    "DatasetArtifact",
     "IntensityCode",
+    "ProvenanceError",
     "SignalSample",
+    "SourceManifest",
+    "SourceReference",
     "__version__",
     "canonical_wow_samples",
     "decode_printer_sequence",
     "decode_printer_symbol",
+    "load_source_manifest",
+    "require_verified_artifacts",
+    "sha256_file",
+    "verify_manifest_artifacts",
 ]
