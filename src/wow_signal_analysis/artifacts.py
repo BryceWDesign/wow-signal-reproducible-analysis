@@ -14,6 +14,7 @@ from wow_signal_analysis.analysis_snapshot import (
     ANALYSIS_SNAPSHOT_ID,
     AnalysisSnapshot,
 )
+from wow_signal_analysis.report import build_analysis_report
 
 ANALYSIS_ARTIFACT_BUNDLE_ID: Final = "wow-signal-analysis-artifacts-v1"
 ANALYSIS_ARTIFACT_DIRECTORY: Final = PurePosixPath("artifacts/generated")
@@ -22,6 +23,12 @@ ANALYSIS_SNAPSHOT_ARTIFACT_PATH: Final = (
 )
 ANALYSIS_SNAPSHOT_CHECKSUM_PATH: Final = (
     ANALYSIS_ARTIFACT_DIRECTORY / "analysis_snapshot.sha256"
+)
+ANALYSIS_REPORT_ARTIFACT_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.md"
+)
+ANALYSIS_REPORT_CHECKSUM_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.sha256"
 )
 
 _IDENTIFIER_PATTERN: Final = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -77,12 +84,14 @@ class GeneratedArtifact:
 
 @dataclass(frozen=True, slots=True)
 class AnalysisArtifactBundle:
-    """Canonical JSON snapshot and its detached SHA-256 checksum."""
+    """Canonical snapshot, report, and detached SHA-256 checksum files."""
 
     bundle_id: str
     analysis_id: str
     snapshot: GeneratedArtifact
     checksum: GeneratedArtifact
+    report: GeneratedArtifact
+    report_checksum: GeneratedArtifact
 
     def __post_init__(self) -> None:
         if not _IDENTIFIER_PATTERN.fullmatch(self.bundle_id):
@@ -98,35 +107,25 @@ class AnalysisArtifactBundle:
                 f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
             )
 
-        if self.snapshot.relative_path != ANALYSIS_SNAPSHOT_ARTIFACT_PATH:
-            raise ArtifactGenerationError(
-                "snapshot artifact path does not match the canonical path"
-            )
-        if self.snapshot.media_type != "application/json":
-            raise ArtifactGenerationError(
-                "snapshot artifact media_type must be application/json"
-            )
+        self._validate_snapshot_artifacts()
+        self._validate_report_artifacts()
 
-        if self.checksum.relative_path != ANALYSIS_SNAPSHOT_CHECKSUM_PATH:
-            raise ArtifactGenerationError(
-                "checksum artifact path does not match the canonical path"
-            )
-        if self.checksum.media_type != "text/plain":
-            raise ArtifactGenerationError(
-                "checksum artifact media_type must be text/plain"
-            )
+    @property
+    def snapshot_checksum(self) -> GeneratedArtifact:
+        """Return the snapshot checksum under an explicit property name."""
 
-        expected_checksum = _checksum_content(self.snapshot)
-        if self.checksum.content != expected_checksum:
-            raise ArtifactGenerationError(
-                "checksum artifact does not match the snapshot digest"
-            )
+        return self.checksum
 
     @property
     def artifacts(self) -> tuple[GeneratedArtifact, ...]:
         """Return bundle artifacts in deterministic write order."""
 
-        return (self.snapshot, self.checksum)
+        return (
+            self.snapshot,
+            self.checksum,
+            self.report,
+            self.report_checksum,
+        )
 
     @property
     def total_byte_count(self) -> int:
@@ -151,6 +150,76 @@ class AnalysisArtifactBundle:
                 f"expected one artifact for {normalized}, found {len(matches)}"
             )
         return matches[0]
+
+    def _validate_snapshot_artifacts(self) -> None:
+        if self.snapshot.relative_path != ANALYSIS_SNAPSHOT_ARTIFACT_PATH:
+            raise ArtifactGenerationError(
+                "snapshot artifact path does not match the canonical path"
+            )
+        if self.snapshot.media_type != "application/json":
+            raise ArtifactGenerationError(
+                "snapshot artifact media_type must be application/json"
+            )
+
+        if self.checksum.relative_path != ANALYSIS_SNAPSHOT_CHECKSUM_PATH:
+            raise ArtifactGenerationError(
+                "snapshot checksum path does not match the canonical path"
+            )
+        if self.checksum.media_type != "text/plain":
+            raise ArtifactGenerationError(
+                "snapshot checksum media_type must be text/plain"
+            )
+
+        expected_checksum = _checksum_content(self.snapshot)
+        if self.checksum.content != expected_checksum:
+            raise ArtifactGenerationError(
+                "snapshot checksum does not match the snapshot digest"
+            )
+
+    def _validate_report_artifacts(self) -> None:
+        if self.report.relative_path != ANALYSIS_REPORT_ARTIFACT_PATH:
+            raise ArtifactGenerationError(
+                "report artifact path does not match the canonical path"
+            )
+        if self.report.media_type != "text/markdown":
+            raise ArtifactGenerationError(
+                "report artifact media_type must be text/markdown"
+            )
+
+        try:
+            report_text = self.report.content.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise ArtifactGenerationError(
+                "report artifact must contain valid UTF-8"
+            ) from error
+
+        if not report_text.startswith("# "):
+            raise ArtifactGenerationError(
+                "report artifact must begin with a Markdown level-one heading"
+            )
+        if not report_text.endswith("\n") or report_text.endswith("\n\n"):
+            raise ArtifactGenerationError(
+                "report artifact must end with exactly one line terminator"
+            )
+        if "\r" in report_text:
+            raise ArtifactGenerationError(
+                "report artifact must use LF line endings"
+            )
+
+        if self.report_checksum.relative_path != ANALYSIS_REPORT_CHECKSUM_PATH:
+            raise ArtifactGenerationError(
+                "report checksum path does not match the canonical path"
+            )
+        if self.report_checksum.media_type != "text/plain":
+            raise ArtifactGenerationError(
+                "report checksum media_type must be text/plain"
+            )
+
+        expected_checksum = _checksum_content(self.report)
+        if self.report_checksum.content != expected_checksum:
+            raise ArtifactGenerationError(
+                "report checksum does not match the report digest"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,29 +265,43 @@ class ArtifactWriteResult:
 def build_analysis_artifact_bundle(
     snapshot: AnalysisSnapshot,
 ) -> AnalysisArtifactBundle:
-    """Serialize one analysis snapshot and construct its detached checksum."""
+    """Serialize the snapshot and report with detached checksums."""
 
     if not isinstance(snapshot, AnalysisSnapshot):
         raise ArtifactGenerationError(
             "snapshot must be an AnalysisSnapshot"
         )
 
+    rendered_report = build_analysis_report(snapshot)
+
     snapshot_artifact = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
         media_type="application/json",
         content=snapshot.to_json().encode("utf-8"),
     )
-    checksum_artifact = GeneratedArtifact(
+    snapshot_checksum = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
         media_type="text/plain",
         content=_checksum_content(snapshot_artifact),
+    )
+    report_artifact = GeneratedArtifact(
+        relative_path=ANALYSIS_REPORT_ARTIFACT_PATH,
+        media_type="text/markdown",
+        content=rendered_report.content,
+    )
+    report_checksum = GeneratedArtifact(
+        relative_path=ANALYSIS_REPORT_CHECKSUM_PATH,
+        media_type="text/plain",
+        content=_checksum_content(report_artifact),
     )
 
     return AnalysisArtifactBundle(
         bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
         analysis_id=snapshot.analysis_id,
         snapshot=snapshot_artifact,
-        checksum=checksum_artifact,
+        checksum=snapshot_checksum,
+        report=report_artifact,
+        report_checksum=report_checksum,
     )
 
 
@@ -310,8 +393,8 @@ def verify_written_analysis_artifacts(
     return tuple(results)
 
 
-def _checksum_content(snapshot: GeneratedArtifact) -> bytes:
-    line = f"{snapshot.sha256_hex}  {snapshot.relative_path.name}\n"
+def _checksum_content(artifact: GeneratedArtifact) -> bytes:
+    line = f"{artifact.sha256_hex}  {artifact.relative_path.name}\n"
     return line.encode("ascii")
 
 
