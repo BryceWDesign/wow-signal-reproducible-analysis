@@ -1,4 +1,4 @@
-"""Public package identity, dataset, measurements, profiles, and provenance API."""
+"""Public package identity, analysis, dataset, measurements, and provenance API."""
 
 from typing import Final
 
@@ -43,6 +43,14 @@ from wow_signal_analysis.provenance import (
     sha256_file,
     verify_manifest_artifacts,
 )
+from wow_signal_analysis.thresholds import (
+    BitPolarity,
+    ThresholdCase,
+    ThresholdError,
+    apply_threshold,
+    enumerate_threshold_cases,
+    find_threshold_case,
+)
 
 DISPLAY_NAME: Final = "Reproducible Analysis of the Wow! Signal"
 PROJECT_SLUG: Final = "wow-signal-reproducible-analysis"
@@ -60,6 +68,7 @@ __all__ = [
     "AdjacentChange",
     "ArtifactStatus",
     "ArtifactVerification",
+    "BitPolarity",
     "DatasetArtifact",
     "DatasetError",
     "IntensityCode",
@@ -71,13 +80,18 @@ __all__ = [
     "SignalSample",
     "SourceManifest",
     "SourceReference",
+    "ThresholdCase",
+    "ThresholdError",
     "Trend",
     "__version__",
     "analyze_midpoint_values",
     "analyze_samples",
+    "apply_threshold",
     "canonical_wow_samples",
     "decode_printer_sequence",
     "decode_printer_symbol",
+    "enumerate_threshold_cases",
+    "find_threshold_case",
     "load_observation_csv",
     "load_source_manifest",
     "load_verified_wow_dataset",
