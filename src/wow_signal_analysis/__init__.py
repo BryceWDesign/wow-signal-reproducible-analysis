@@ -1,4 +1,4 @@
-"""Public package identity, dataset, measurements, and provenance API."""
+"""Public package identity, dataset, measurements, profiles, and provenance API."""
 
 from typing import Final
 
@@ -21,6 +21,15 @@ from wow_signal_analysis.measurements import (
     canonical_wow_samples,
     decode_printer_sequence,
     decode_printer_symbol,
+)
+from wow_signal_analysis.profile import (
+    AdjacentChange,
+    MirrorComparison,
+    ProfileError,
+    SequenceProfile,
+    Trend,
+    analyze_midpoint_values,
+    analyze_samples,
 )
 from wow_signal_analysis.provenance import (
     ArtifactStatus,
@@ -48,17 +57,24 @@ __all__ = [
     "WOW_INTEGRATION_SECONDS",
     "WOW_PRINTER_SEQUENCE",
     "WOW_SAMPLE_CADENCE_SECONDS",
+    "AdjacentChange",
     "ArtifactStatus",
     "ArtifactVerification",
     "DatasetArtifact",
     "DatasetError",
     "IntensityCode",
+    "MirrorComparison",
     "ObservationDataset",
+    "ProfileError",
     "ProvenanceError",
+    "SequenceProfile",
     "SignalSample",
     "SourceManifest",
     "SourceReference",
+    "Trend",
     "__version__",
+    "analyze_midpoint_values",
+    "analyze_samples",
     "canonical_wow_samples",
     "decode_printer_sequence",
     "decode_printer_symbol",
