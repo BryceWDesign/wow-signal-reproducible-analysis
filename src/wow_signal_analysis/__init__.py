@@ -44,6 +44,14 @@ from wow_signal_analysis.measurements import (
     decode_printer_sequence,
     decode_printer_symbol,
 )
+from wow_signal_analysis.model_comparison import (
+    CandidateModel,
+    CrossValidationFold,
+    ModelComparisonError,
+    ModelComparisonReport,
+    ModelCrossValidation,
+    compare_shape_models,
+)
 from wow_signal_analysis.morse import (
     MORSE_MANIFEST_PATH,
     MORSE_REFERENCE_PATH,
@@ -136,6 +144,8 @@ __all__ = [
     "BeamModelError",
     "BeamSampleFit",
     "BitPolarity",
+    "CandidateModel",
+    "CrossValidationFold",
     "DatasetArtifact",
     "DatasetError",
     "FitMetric",
@@ -151,6 +161,9 @@ __all__ = [
     "IntensityCode",
     "MetricEnvelope",
     "MirrorComparison",
+    "ModelComparisonError",
+    "ModelComparisonReport",
+    "ModelCrossValidation",
     "MorseCategory",
     "MorseCorrespondenceError",
     "MorseCorrespondenceReport",
@@ -185,6 +198,7 @@ __all__ = [
     "analyze_threshold_morse",
     "apply_threshold",
     "canonical_wow_samples",
+    "compare_shape_models",
     "decode_printer_sequence",
     "decode_printer_symbol",
     "enumerate_threshold_cases",
