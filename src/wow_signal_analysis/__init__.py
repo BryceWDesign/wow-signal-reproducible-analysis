@@ -159,6 +159,14 @@ from wow_signal_analysis.quantization import (
     QuantizationSensitivityReport,
     analyze_quantization_corners,
 )
+from wow_signal_analysis.report import (
+    ANALYSIS_REPORT_ID,
+    ANALYSIS_REPORT_TITLE,
+    RenderedAnalysisReport,
+    ReportRenderError,
+    build_analysis_report,
+    render_analysis_report,
+)
 from wow_signal_analysis.repository_contract import (
     RepositoryContractError,
     RepositoryContractReport,
@@ -181,6 +189,8 @@ __version__: Final = "0.1.0"
 __all__ = [
     "ANALYSIS_ARTIFACT_BUNDLE_ID",
     "ANALYSIS_ARTIFACT_DIRECTORY",
+    "ANALYSIS_REPORT_ID",
+    "ANALYSIS_REPORT_TITLE",
     "ANALYSIS_SNAPSHOT_ARTIFACT_PATH",
     "ANALYSIS_SNAPSHOT_CHECKSUM_PATH",
     "ANALYSIS_SNAPSHOT_ID",
@@ -264,6 +274,8 @@ __all__ = [
     "QuantizationCornerFit",
     "QuantizationError",
     "QuantizationSensitivityReport",
+    "RenderedAnalysisReport",
+    "ReportRenderError",
     "RepositoryContractError",
     "RepositoryContractReport",
     "SequenceDirection",
@@ -287,6 +299,7 @@ __all__ = [
     "apply_threshold",
     "bind_hypothesis_matrix",
     "build_analysis_artifact_bundle",
+    "build_analysis_report",
     "build_analysis_snapshot",
     "canonical_wow_samples",
     "compare_shape_models",
@@ -311,6 +324,7 @@ __all__ = [
     "load_verified_morse_registry",
     "load_verified_wow_dataset",
     "morse_pattern_from_mask",
+    "render_analysis_report",
     "require_canonical_wow_dataset",
     "require_verified_artifacts",
     "sha256_file",
