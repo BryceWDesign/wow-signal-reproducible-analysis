@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "matrix_id": "wow-signal-hypothesis-matrix-v1",
+  "title": "Evidence-bound hypothesis matrix for the 1977 Wow! signal",
+  "scope_note": "The matrix separates model compatibility, source function, source origin, and symbolic intent. A compatible hypothesis is not identified as true, and a reproducible transformation is not treated as recovered transmitter intent.",
+  "hypotheses": [
+    {
+      "hypothesis_id": "gaussian-transit-shape",
+      "label": "Gaussian transit-shaped envelope",
+      "scope": "shape-model",
+      "proposition": "The retained six-sample strength envelope is compatible with a source crossing a telescope beam under a zero-baseline Gaussian response model.",
+      "status": "supported-as-model",
+      "claim_ids": [
+        "derived-gaussian-compatibility",
+        "derived-gaussian-loocv-ranking"
+      ],
+      "rationale": "The Gaussian model produces small residuals and the lowest leave-one-out error among the four predeclared shape models.",
+      "would_strengthen": [
+        "Independent recovery of higher-resolution samples showing the same beam-response envelope.",
+        "Instrument records confirming the applicable Big Ear beam parameters for the observed declination and channel."
+      ],
+      "would_weaken": [
+        "Recovered samples showing incompatible multi-peaked or discontinuous structure at the retained cadence.",
+        "A validated receiver artifact that reproduces the envelope without a sky transit."
+      ],
+      "limitations": [
+        "Shape-model support does not identify the emitter, its location, its natural or artificial origin, or its intent."
+      ]
+    },
+    {
+      "hypothesis_id": "stable-artificial-carrier-or-beacon",
+      "label": "Stable artificial carrier or beacon",
+      "scope": "source-function",
+      "proposition": "A stable artificial carrier or beacon could produce the coarse retained strength envelope after convolution with the telescope beam.",
+      "status": "compatible-not-proven",
+      "claim_ids": [
+        "compatible-beacon-hypothesis",
+        "speculative-extraterrestrial-technology"
+      ],
+      "rationale": "The retained measurements do not exclude a stable narrowband artificial carrier, but they contain no preserved modulation or source-identifying evidence.",
+      "would_strengthen": [
+        "A repeat detection from the same sky position with stable narrowband coherence and instrument-independent confirmation.",
+        "Resolved modulation, synchronization, coding, or Doppler behavior inconsistent with known terrestrial interference and natural emission."
+      ],
+      "would_weaken": [
+        "A repeatable natural mechanism reproducing the frequency, strength, duration, and beam-transit behavior.",
+        "Traceable terrestrial or instrumental interference matching the historical event."
+      ],
+      "limitations": [
+        "Compatibility with a beacon is not evidence that a beacon existed or that any artificial source was extraterrestrial."
+      ]
+    },
+    {
+      "hypothesis_id": "natural-versus-artificial-origin",
+      "label": "Natural versus artificial source origin",
+      "scope": "source-origin",
+      "proposition": "The surviving six strength measurements alone do not discriminate between a natural narrowband event and an artificial carrier-like source.",
+      "status": "not-discriminated",
+      "claim_ids": [
+        "derived-gaussian-compatibility",
+        "compatible-beacon-hypothesis",
+        "speculative-extraterrestrial-technology"
+      ],
+      "rationale": "The beam-shaped envelope constrains observed geometry, while the retained data omit the fine timing, phase, polarization, and spectral structure needed for origin classification.",
+      "would_strengthen": [
+        "Recovery of raw or higher-resolution archival data containing discriminating spectral, temporal, polarization, or Doppler structure.",
+        "A confirmed recurrence enabling simultaneous observation by independent instruments."
+      ],
+      "would_weaken": [
+        "No additional evidence can make the six coarse measurements alone discriminate origin; the limitation is information-theoretic."
+      ],
+      "limitations": [
+        "This status records unresolved discrimination, not equal prior probability for natural and artificial hypotheses."
+      ]
+    },
+    {
+      "hypothesis_id": "intentional-morse-question",
+      "label": "Intentional Morse question mark",
+      "scope": "symbolic-intent",
+      "proposition": "The historical source intentionally encoded an International Morse question mark in the retained six-sample envelope.",
+      "status": "not-established",
+      "claim_ids": [
+        "derived-question-mark-correspondence",
+        "derived-comma-correspondence",
+        "derived-question-null-frequency",
+        "speculative-intentional-message"
+      ],
+      "rationale": "The question-mark correspondence is reproducible under one threshold and polarity, but the opposite polarity yields a comma and the exact permutation control shows the pattern is not rare enough to establish intent.",
+      "would_strengthen": [
+        "A predeclared decoding rule independently recovering repeated, internally consistent symbols from additional observations.",
+        "Preserved transmitter-scale timing showing dot, dash, character, and word spacing ratios rather than receiver-strength averaging."
+      ],
+      "would_weaken": [
+        "Additional exhaustive controls showing equally flexible transformations generate many standard symbols at comparable or higher rates.",
+        "Evidence that the observed envelope is fully explained by receiver beam response with no residual symbolic structure."
+      ],
+      "limitations": [
+        "The six printer characters are receiver-strength codes and cannot be treated as transmitted Morse elements without an independently justified transformation."
+      ]
+    },
+    {
+      "hypothesis_id": "extraterrestrial-technology-origin",
+      "label": "Extraterrestrial technology",
+      "scope": "source-origin",
+      "proposition": "The historical event was produced by extraterrestrial technology.",
+      "status": "not-established",
+      "claim_ids": [
+        "compatible-beacon-hypothesis",
+        "derived-frequency-context",
+        "speculative-extraterrestrial-technology"
+      ],
+      "rationale": "Artificial-carrier compatibility and hydrogen-line context do not identify a technological source, establish extraterrestrial location, or exclude natural and terrestrial explanations.",
+      "would_strengthen": [
+        "Independent repeated detections localized to an astronomical source with non-natural information-bearing structure.",
+        "A reproducible technosignature satisfying interference rejection, source localization, and multi-observatory confirmation requirements."
+      ],
+      "would_weaken": [
+        "A verified natural, terrestrial, or instrumental mechanism reproducing all material properties of the event.",
+        "Failure of future targeted observations to recover any source-specific evidence does not by itself falsify a one-time event, but it prevents confirmation."
+      ],
+      "limitations": [
+        "The repository does not assign extraterrestrial authorship from a single non-repeating, coarsely sampled event."
+      ]
+    }
+  ]
+}
