@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from dataclasses import replace
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -13,6 +15,9 @@ from wow_signal_analysis.artifacts import (
     ANALYSIS_ARTIFACT_BUNDLE_ID,
     ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
     ANALYSIS_BEAM_FIT_FIGURE_PATH,
+    ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+    ANALYSIS_BUNDLE_MANIFEST_PATH,
+    ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION,
     ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
     ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
     ANALYSIS_REPORT_ARTIFACT_PATH,
@@ -20,7 +25,9 @@ from wow_signal_analysis.artifacts import (
     ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
     ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
     AnalysisArtifactBundle,
+    AnalysisBundleManifest,
     ArtifactGenerationError,
+    BundleManifestEntry,
     GeneratedArtifact,
     build_analysis_artifact_bundle,
     verify_written_analysis_artifacts,
@@ -85,12 +92,11 @@ def test_bundle_serialization_is_byte_for_byte_deterministic(
     )
 
 
-def test_bundle_contains_all_primary_artifacts_and_checksums(
+def test_bundle_separates_payload_from_manifest_artifacts(
     bundle: AnalysisArtifactBundle,
 ) -> None:
-    assert bundle.snapshot_checksum is bundle.checksum
     assert tuple(
-        artifact.relative_path for artifact in bundle.artifacts
+        artifact.relative_path for artifact in bundle.payload_artifacts
     ) == (
         ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
         ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
@@ -102,16 +108,43 @@ def test_bundle_contains_all_primary_artifacts_and_checksums(
         ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
     )
     assert tuple(
-        artifact.media_type for artifact in bundle.artifacts
+        artifact.relative_path for artifact in bundle.artifacts
     ) == (
-        "application/json",
-        "text/plain",
-        "text/markdown",
-        "text/plain",
-        "image/svg+xml",
-        "text/plain",
-        "image/svg+xml",
-        "text/plain",
+        *(
+            artifact.relative_path
+            for artifact in bundle.payload_artifacts
+        ),
+        ANALYSIS_BUNDLE_MANIFEST_PATH,
+        ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+    )
+    assert len(bundle.payload_artifacts) == 8
+    assert len(bundle.artifacts) == 10
+
+
+def test_manifest_exactly_inventories_payload_artifacts(
+    bundle: AnalysisArtifactBundle,
+) -> None:
+    manifest = bundle.manifest_model
+    decoded = json.loads(bundle.manifest.content)
+
+    assert manifest.schema_version == ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION
+    assert manifest.bundle_id == bundle.bundle_id
+    assert manifest.analysis_id == bundle.analysis_id
+    assert manifest.artifact_count == 8
+    assert manifest.total_byte_count == sum(
+        artifact.byte_count for artifact in bundle.payload_artifacts
+    )
+    assert decoded == manifest.to_mapping()
+    assert bundle.manifest.content == manifest.to_json().encode("utf-8")
+    assert tuple(
+        entry.relative_path for entry in manifest.artifacts
+    ) == tuple(
+        artifact.relative_path for artifact in bundle.payload_artifacts
+    )
+    assert tuple(
+        entry.sha256_hex for entry in manifest.artifacts
+    ) == tuple(
+        artifact.sha256_hex for artifact in bundle.payload_artifacts
     )
 
 
@@ -126,6 +159,7 @@ def test_checksum_files_use_matching_digests_and_basenames(
             bundle.model_comparison_figure,
             bundle.model_comparison_checksum,
         ),
+        (bundle.manifest, bundle.manifest_checksum),
     )
 
     for primary, checksum in primary_and_checksum:
@@ -198,7 +232,7 @@ def test_writer_creates_and_verifies_all_artifacts(
     )
 
     assert written == verified
-    assert len(written) == 8
+    assert len(written) == 10
     assert tuple(result.relative_path for result in written) == tuple(
         artifact.relative_path for artifact in bundle.artifacts
     )
@@ -273,6 +307,10 @@ def test_writer_can_refuse_overwrite(
             ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
             b'<svg xmlns="http://www.w3.org/2000/svg"></svg>\n',
         ),
+        (
+            ANALYSIS_BUNDLE_MANIFEST_PATH,
+            b'{"tampered":true}\n',
+        ),
     ],
 )
 def test_verifier_detects_primary_artifact_tampering(
@@ -309,6 +347,7 @@ def test_verifier_detects_primary_artifact_tampering(
         ANALYSIS_REPORT_CHECKSUM_PATH,
         ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
         ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+        ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
     ],
 )
 def test_verifier_detects_missing_checksum_artifacts(
@@ -359,6 +398,28 @@ def test_generated_artifact_rejects_unsafe_or_empty_content() -> None:
         )
 
 
+def test_manifest_entries_reject_self_reference_and_duplicate_paths(
+    bundle: AnalysisArtifactBundle,
+) -> None:
+    with pytest.raises(
+        ArtifactGenerationError,
+        match="must not include the manifest itself",
+    ):
+        BundleManifestEntry.from_artifact(bundle.manifest)
+
+    entry = BundleManifestEntry.from_artifact(bundle.snapshot)
+    with pytest.raises(
+        ArtifactGenerationError,
+        match="paths must be unique",
+    ):
+        AnalysisBundleManifest(
+            schema_version=ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION,
+            bundle_id=bundle.bundle_id,
+            analysis_id=bundle.analysis_id,
+            artifacts=(entry, entry),
+        )
+
+
 def test_bundle_rejects_snapshot_checksum_drift(
     bundle: AnalysisArtifactBundle,
 ) -> None:
@@ -375,18 +436,7 @@ def test_bundle_rejects_snapshot_checksum_drift(
         ArtifactGenerationError,
         match="snapshot checksum does not match",
     ):
-        AnalysisArtifactBundle(
-            bundle_id=bundle.bundle_id,
-            analysis_id=bundle.analysis_id,
-            snapshot=bundle.snapshot,
-            checksum=invalid_checksum,
-            report=bundle.report,
-            report_checksum=bundle.report_checksum,
-            beam_fit_figure=bundle.beam_fit_figure,
-            beam_fit_checksum=bundle.beam_fit_checksum,
-            model_comparison_figure=bundle.model_comparison_figure,
-            model_comparison_checksum=bundle.model_comparison_checksum,
-        )
+        replace(bundle, checksum=invalid_checksum)
 
 
 def test_bundle_rejects_figure_checksum_drift(
@@ -405,18 +455,36 @@ def test_bundle_rejects_figure_checksum_drift(
         ArtifactGenerationError,
         match="beam-fit checksum does not match",
     ):
-        AnalysisArtifactBundle(
-            bundle_id=bundle.bundle_id,
-            analysis_id=bundle.analysis_id,
-            snapshot=bundle.snapshot,
-            checksum=bundle.checksum,
-            report=bundle.report,
-            report_checksum=bundle.report_checksum,
-            beam_fit_figure=bundle.beam_fit_figure,
-            beam_fit_checksum=invalid_checksum,
-            model_comparison_figure=bundle.model_comparison_figure,
-            model_comparison_checksum=bundle.model_comparison_checksum,
-        )
+        replace(bundle, beam_fit_checksum=invalid_checksum)
+
+
+def test_bundle_rejects_manifest_content_or_checksum_drift(
+    bundle: AnalysisArtifactBundle,
+) -> None:
+    invalid_manifest = GeneratedArtifact(
+        relative_path=ANALYSIS_BUNDLE_MANIFEST_PATH,
+        media_type="application/json",
+        content=b"{}\n",
+    )
+    with pytest.raises(
+        ArtifactGenerationError,
+        match="does not match the payload artifacts",
+    ):
+        replace(bundle, manifest=invalid_manifest)
+
+    invalid_checksum = GeneratedArtifact(
+        relative_path=ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+        media_type="text/plain",
+        content=(
+            b"0000000000000000000000000000000000000000000000000000000000000000"
+            b"  artifact_manifest.json\n"
+        ),
+    )
+    with pytest.raises(
+        ArtifactGenerationError,
+        match="bundle manifest checksum does not match",
+    ):
+        replace(bundle, manifest_checksum=invalid_checksum)
 
 
 def test_bundle_rejects_invalid_figure_encoding_or_format(
@@ -432,18 +500,7 @@ def test_bundle_rejects_invalid_figure_encoding_or_format(
         ArtifactGenerationError,
         match="valid UTF-8",
     ):
-        AnalysisArtifactBundle(
-            bundle_id=bundle.bundle_id,
-            analysis_id=bundle.analysis_id,
-            snapshot=bundle.snapshot,
-            checksum=bundle.checksum,
-            report=bundle.report,
-            report_checksum=bundle.report_checksum,
-            beam_fit_figure=invalid_encoding,
-            beam_fit_checksum=bundle.beam_fit_checksum,
-            model_comparison_figure=bundle.model_comparison_figure,
-            model_comparison_checksum=bundle.model_comparison_checksum,
-        )
+        replace(bundle, beam_fit_figure=invalid_encoding)
 
     invalid_format = GeneratedArtifact(
         relative_path=ANALYSIS_BEAM_FIT_FIGURE_PATH,
@@ -459,17 +516,10 @@ def test_bundle_rejects_invalid_figure_encoding_or_format(
         ArtifactGenerationError,
         match="canonical SVG root",
     ):
-        AnalysisArtifactBundle(
-            bundle_id=bundle.bundle_id,
-            analysis_id=bundle.analysis_id,
-            snapshot=bundle.snapshot,
-            checksum=bundle.checksum,
-            report=bundle.report,
-            report_checksum=bundle.report_checksum,
+        replace(
+            bundle,
             beam_fit_figure=invalid_format,
             beam_fit_checksum=invalid_format_checksum,
-            model_comparison_figure=bundle.model_comparison_figure,
-            model_comparison_checksum=bundle.model_comparison_checksum,
         )
 
 
@@ -494,17 +544,10 @@ def test_bundle_rejects_unsafe_figure_content(
         ArtifactGenerationError,
         match="executable scripts",
     ):
-        AnalysisArtifactBundle(
-            bundle_id=bundle.bundle_id,
-            analysis_id=bundle.analysis_id,
-            snapshot=bundle.snapshot,
-            checksum=bundle.checksum,
-            report=bundle.report,
-            report_checksum=bundle.report_checksum,
+        replace(
+            bundle,
             beam_fit_figure=unsafe_figure,
             beam_fit_checksum=unsafe_checksum,
-            model_comparison_figure=bundle.model_comparison_figure,
-            model_comparison_checksum=bundle.model_comparison_checksum,
         )
 
 
