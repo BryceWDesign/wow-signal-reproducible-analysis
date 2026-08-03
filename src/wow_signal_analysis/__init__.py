@@ -2,6 +2,14 @@
 
 from typing import Final
 
+from wow_signal_analysis.analysis_snapshot import (
+    ANALYSIS_SNAPSHOT_ID,
+    ANALYSIS_SNAPSHOT_SCHEMA_VERSION,
+    AnalysisSnapshot,
+    AnalysisSnapshotError,
+    SnapshotConfig,
+    build_analysis_snapshot,
+)
 from wow_signal_analysis.beam_model import (
     BeamModelError,
     BeamSampleFit,
@@ -158,6 +166,8 @@ PROJECT_SLUG: Final = "wow-signal-reproducible-analysis"
 __version__: Final = "0.1.0"
 
 __all__ = [
+    "ANALYSIS_SNAPSHOT_ID",
+    "ANALYSIS_SNAPSHOT_SCHEMA_VERSION",
     "CANONICAL_DATASET_PATH",
     "CANONICAL_MANIFEST_PATH",
     "CLAIM_LEDGER_MANIFEST_PATH",
@@ -176,6 +186,8 @@ __all__ = [
     "WOW_PRINTER_SEQUENCE",
     "WOW_SAMPLE_CADENCE_SECONDS",
     "AdjacentChange",
+    "AnalysisSnapshot",
+    "AnalysisSnapshotError",
     "ArtifactStatus",
     "ArtifactVerification",
     "BeamModelError",
@@ -236,6 +248,7 @@ __all__ = [
     "SequenceDirection",
     "SequenceProfile",
     "SignalSample",
+    "SnapshotConfig",
     "SourceManifest",
     "SourceReference",
     "SpectralLineReference",
@@ -252,6 +265,7 @@ __all__ = [
     "analyze_threshold_morse",
     "apply_threshold",
     "bind_hypothesis_matrix",
+    "build_analysis_snapshot",
     "canonical_wow_samples",
     "compare_shape_models",
     "decode_printer_sequence",
