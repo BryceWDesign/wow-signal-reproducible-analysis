@@ -10,6 +10,11 @@ import pytest
 
 import wow_signal_analysis.cli as cli
 from wow_signal_analysis.analysis_snapshot import AnalysisSnapshot
+from wow_signal_analysis.artifact_audit import (
+    ARTIFACT_AUDIT_ID,
+    ArtifactAuditReport,
+    AuditedArtifact,
+)
 from wow_signal_analysis.artifacts import (
     ANALYSIS_ARTIFACT_BUNDLE_ID,
     ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
@@ -213,6 +218,34 @@ def _write_results(
     )
 
 
+def _artifact_audit_report(
+    root: Path,
+    *,
+    strict_directory: bool,
+) -> ArtifactAuditReport:
+    bundle = _artifact_bundle()
+    audited = tuple(
+        AuditedArtifact(
+            relative_path=artifact.relative_path,
+            media_type=artifact.media_type,
+            byte_count=artifact.byte_count,
+            sha256_hex=artifact.sha256_hex,
+        )
+        for artifact in bundle.payload_artifacts
+    )
+
+    return ArtifactAuditReport(
+        audit_id=ARTIFACT_AUDIT_ID,
+        repository_root=root.resolve(),
+        bundle_id=bundle.bundle_id,
+        analysis_id=bundle.analysis_id,
+        manifest_byte_count=bundle.manifest.byte_count,
+        manifest_sha256_hex=bundle.manifest.sha256_hex,
+        artifacts=audited,
+        strict_directory=strict_directory,
+    )
+
+
 def test_verify_command_emits_portable_deterministic_json(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -272,6 +305,103 @@ def test_verify_command_emits_human_readable_text(
     )
     assert "Printer sequence: 6EQUJ5\n" in stdout.getvalue()
     assert "Canonical records: 77\n" in stdout.getvalue()
+
+
+def test_audit_command_emits_portable_deterministic_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _artifact_audit_report(
+        tmp_path,
+        strict_directory=True,
+    )
+    captured: dict[str, object] = {}
+
+    def fake_audit(
+        repository_root: Path,
+        *,
+        strict_directory: bool,
+    ) -> ArtifactAuditReport:
+        captured["repository_root"] = repository_root
+        captured["strict_directory"] = strict_directory
+        return report
+
+    monkeypatch.setattr(
+        cli,
+        "audit_generated_artifacts",
+        fake_audit,
+    )
+    stdout = StringIO()
+    stderr = StringIO()
+
+    status = cli.main(
+        (
+            "audit",
+            "--root",
+            str(tmp_path),
+            "--json",
+        ),
+        stdout=stdout,
+        stderr=stderr,
+    )
+    payload = json.loads(stdout.getvalue())
+
+    assert status == 0
+    assert stderr.getvalue() == ""
+    assert captured["repository_root"] == tmp_path
+    assert captured["strict_directory"] is True
+    assert payload["command"] == "audit"
+    assert payload["status"] == "ok"
+    assert payload["audit_id"] == ARTIFACT_AUDIT_ID
+    assert payload["strict_directory"] is True
+    assert payload["artifact_count"] == 8
+    assert len(payload["artifacts"]) == 8
+    assert payload["manifest"]["sha256"] == report.manifest_sha256_hex
+
+
+def test_audit_command_can_allow_extra_files(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _artifact_audit_report(
+        tmp_path,
+        strict_directory=False,
+    )
+    captured: dict[str, object] = {}
+
+    def fake_audit(
+        repository_root: Path,
+        *,
+        strict_directory: bool,
+    ) -> ArtifactAuditReport:
+        captured["strict_directory"] = strict_directory
+        return report
+
+    monkeypatch.setattr(
+        cli,
+        "audit_generated_artifacts",
+        fake_audit,
+    )
+    stdout = StringIO()
+
+    status = cli.main(
+        (
+            "audit",
+            "--root",
+            str(tmp_path),
+            "--allow-extra-files",
+        ),
+        stdout=stdout,
+        stderr=StringIO(),
+    )
+
+    assert status == 0
+    assert captured["strict_directory"] is False
+    assert stdout.getvalue().startswith(
+        "Generated artifact audit: verified\n"
+    )
+    assert "Directory inventory: allow-extra-files\n" in stdout.getvalue()
+    assert "Payload artifacts: 8\n" in stdout.getvalue()
 
 
 def test_generate_command_passes_explicit_reproducibility_controls(
