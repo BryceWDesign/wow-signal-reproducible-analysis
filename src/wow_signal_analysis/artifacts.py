@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -46,6 +47,13 @@ ANALYSIS_MODEL_COMPARISON_FIGURE_PATH: Final = (
 )
 ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH: Final = (
     ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.sha256"
+)
+ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION: Final = 1
+ANALYSIS_BUNDLE_MANIFEST_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "artifact_manifest.json"
+)
+ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH: Final = (
+    ANALYSIS_ARTIFACT_DIRECTORY / "artifact_manifest.sha256"
 )
 
 _IDENTIFIER_PATTERN: Final = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -100,8 +108,164 @@ class GeneratedArtifact:
 
 
 @dataclass(frozen=True, slots=True)
+class BundleManifestEntry:
+    """One content-addressed entry in the generated artifact manifest."""
+
+    relative_path: PurePosixPath
+    media_type: str
+    byte_count: int
+    sha256_hex: str
+
+    def __post_init__(self) -> None:
+        normalized_path = PurePosixPath(self.relative_path)
+        object.__setattr__(self, "relative_path", normalized_path)
+
+        if (
+            normalized_path.is_absolute()
+            or not normalized_path.parts
+            or ".." in normalized_path.parts
+        ):
+            raise ArtifactGenerationError(
+                "manifest relative_path must be repository-relative"
+            )
+        if normalized_path in {
+            ANALYSIS_BUNDLE_MANIFEST_PATH,
+            ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+        }:
+            raise ArtifactGenerationError(
+                "manifest entries must not include the manifest itself"
+            )
+        if not self.media_type.strip():
+            raise ArtifactGenerationError(
+                "manifest media_type must be non-empty"
+            )
+        if self.byte_count <= 0:
+            raise ArtifactGenerationError(
+                "manifest byte_count must be positive"
+            )
+        if not _SHA256_PATTERN.fullmatch(self.sha256_hex):
+            raise ArtifactGenerationError(
+                "manifest sha256_hex must be a lowercase SHA-256 digest"
+            )
+
+    @classmethod
+    def from_artifact(
+        cls,
+        artifact: GeneratedArtifact,
+    ) -> BundleManifestEntry:
+        """Construct one manifest entry from exact artifact bytes."""
+
+        return cls(
+            relative_path=artifact.relative_path,
+            media_type=artifact.media_type,
+            byte_count=artifact.byte_count,
+            sha256_hex=artifact.sha256_hex,
+        )
+
+    def to_mapping(self) -> dict[str, object]:
+        """Return a JSON-compatible manifest entry."""
+
+        return {
+            "relative_path": str(self.relative_path),
+            "media_type": self.media_type,
+            "byte_count": self.byte_count,
+            "sha256": self.sha256_hex,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisBundleManifest:
+    """Content-addressed inventory of all non-manifest bundle artifacts."""
+
+    schema_version: int
+    bundle_id: str
+    analysis_id: str
+    artifacts: tuple[BundleManifestEntry, ...]
+
+    def __post_init__(self) -> None:
+        if self.schema_version != ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION:
+            raise ArtifactGenerationError(
+                "unsupported analysis bundle manifest schema_version"
+            )
+        if self.bundle_id != ANALYSIS_ARTIFACT_BUNDLE_ID:
+            raise ArtifactGenerationError(
+                f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}"
+            )
+        if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
+            raise ArtifactGenerationError(
+                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
+            )
+        if not self.artifacts:
+            raise ArtifactGenerationError(
+                "analysis bundle manifest must contain artifacts"
+            )
+
+        paths = tuple(entry.relative_path for entry in self.artifacts)
+        if len(set(paths)) != len(paths):
+            raise ArtifactGenerationError(
+                "analysis bundle manifest paths must be unique"
+            )
+
+    @classmethod
+    def from_artifacts(
+        cls,
+        artifacts: tuple[GeneratedArtifact, ...],
+    ) -> AnalysisBundleManifest:
+        """Build a manifest from artifacts in their canonical bundle order."""
+
+        return cls(
+            schema_version=ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION,
+            bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
+            analysis_id=ANALYSIS_SNAPSHOT_ID,
+            artifacts=tuple(
+                BundleManifestEntry.from_artifact(artifact)
+                for artifact in artifacts
+            ),
+        )
+
+    @property
+    def artifact_count(self) -> int:
+        """Return the number of inventoried non-manifest artifacts."""
+
+        return len(self.artifacts)
+
+    @property
+    def total_byte_count(self) -> int:
+        """Return the exact combined byte count of inventoried artifacts."""
+
+        return sum(entry.byte_count for entry in self.artifacts)
+
+    def to_mapping(self) -> dict[str, object]:
+        """Return a deterministic JSON-compatible manifest."""
+
+        return {
+            "schema_version": self.schema_version,
+            "bundle_id": self.bundle_id,
+            "analysis_id": self.analysis_id,
+            "artifact_count": self.artifact_count,
+            "total_byte_count": self.total_byte_count,
+            "artifacts": [
+                entry.to_mapping() for entry in self.artifacts
+            ],
+        }
+
+    def to_json(self) -> str:
+        """Serialize the manifest with stable keys and a final newline."""
+
+        return (
+            json.dumps(
+                self.to_mapping(),
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AnalysisArtifactBundle:
-    """Canonical snapshot, report, figures, and detached checksum files."""
+    """Canonical snapshot, report, figures, manifest, and checksums."""
 
     bundle_id: str
     analysis_id: str
@@ -113,6 +277,8 @@ class AnalysisArtifactBundle:
     beam_fit_checksum: GeneratedArtifact
     model_comparison_figure: GeneratedArtifact
     model_comparison_checksum: GeneratedArtifact
+    manifest: GeneratedArtifact
+    manifest_checksum: GeneratedArtifact
 
     def __post_init__(self) -> None:
         if not _IDENTIFIER_PATTERN.fullmatch(self.bundle_id):
@@ -131,6 +297,7 @@ class AnalysisArtifactBundle:
         self._validate_snapshot_artifacts()
         self._validate_report_artifacts()
         self._validate_figure_artifacts()
+        self._validate_manifest_artifacts()
 
     @property
     def snapshot_checksum(self) -> GeneratedArtifact:
@@ -139,8 +306,8 @@ class AnalysisArtifactBundle:
         return self.checksum
 
     @property
-    def artifacts(self) -> tuple[GeneratedArtifact, ...]:
-        """Return bundle artifacts in deterministic write order."""
+    def payload_artifacts(self) -> tuple[GeneratedArtifact, ...]:
+        """Return artifacts inventoried by the detached bundle manifest."""
 
         return (
             self.snapshot,
@@ -151,6 +318,22 @@ class AnalysisArtifactBundle:
             self.beam_fit_checksum,
             self.model_comparison_figure,
             self.model_comparison_checksum,
+        )
+
+    @property
+    def manifest_model(self) -> AnalysisBundleManifest:
+        """Return the canonical in-memory manifest for the payload artifacts."""
+
+        return AnalysisBundleManifest.from_artifacts(self.payload_artifacts)
+
+    @property
+    def artifacts(self) -> tuple[GeneratedArtifact, ...]:
+        """Return bundle artifacts in deterministic write order."""
+
+        return (
+            *self.payload_artifacts,
+            self.manifest,
+            self.manifest_checksum,
         )
 
     @property
@@ -252,6 +435,25 @@ class AnalysisArtifactBundle:
             label="model-comparison checksum",
         )
 
+    def _validate_manifest_artifacts(self) -> None:
+        _validate_primary_artifact(
+            self.manifest,
+            expected_path=ANALYSIS_BUNDLE_MANIFEST_PATH,
+            expected_media_type="application/json",
+            label="bundle manifest",
+        )
+        expected_content = self.manifest_model.to_json().encode("utf-8")
+        if self.manifest.content != expected_content:
+            raise ArtifactGenerationError(
+                "bundle manifest does not match the payload artifacts"
+            )
+        _validate_checksum_artifact(
+            self.manifest_checksum,
+            source=self.manifest,
+            expected_path=ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+            label="bundle manifest checksum",
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class ArtifactWriteResult:
@@ -296,7 +498,7 @@ class ArtifactWriteResult:
 def build_analysis_artifact_bundle(
     snapshot: AnalysisSnapshot,
 ) -> AnalysisArtifactBundle:
-    """Serialize the snapshot, report, figures, and detached checksums."""
+    """Serialize the snapshot, report, figures, manifest, and checksums."""
 
     if not isinstance(snapshot, AnalysisSnapshot):
         raise ArtifactGenerationError(
@@ -327,28 +529,52 @@ def build_analysis_artifact_bundle(
         content=figures.model_comparison.content,
     )
 
-    return AnalysisArtifactBundle(
-        bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
-        analysis_id=snapshot.analysis_id,
-        snapshot=snapshot_artifact,
-        checksum=_checksum_artifact(
+    payload_artifacts = (
+        snapshot_artifact,
+        _checksum_artifact(
             snapshot_artifact,
             ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
         ),
-        report=report_artifact,
-        report_checksum=_checksum_artifact(
+        report_artifact,
+        _checksum_artifact(
             report_artifact,
             ANALYSIS_REPORT_CHECKSUM_PATH,
         ),
-        beam_fit_figure=beam_fit_figure,
-        beam_fit_checksum=_checksum_artifact(
+        beam_fit_figure,
+        _checksum_artifact(
             beam_fit_figure,
             ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
         ),
-        model_comparison_figure=model_comparison_figure,
-        model_comparison_checksum=_checksum_artifact(
+        model_comparison_figure,
+        _checksum_artifact(
             model_comparison_figure,
             ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+        ),
+    )
+    manifest_model = AnalysisBundleManifest.from_artifacts(
+        payload_artifacts
+    )
+    manifest_artifact = GeneratedArtifact(
+        relative_path=ANALYSIS_BUNDLE_MANIFEST_PATH,
+        media_type="application/json",
+        content=manifest_model.to_json().encode("utf-8"),
+    )
+
+    return AnalysisArtifactBundle(
+        bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
+        analysis_id=snapshot.analysis_id,
+        snapshot=payload_artifacts[0],
+        checksum=payload_artifacts[1],
+        report=payload_artifacts[2],
+        report_checksum=payload_artifacts[3],
+        beam_fit_figure=payload_artifacts[4],
+        beam_fit_checksum=payload_artifacts[5],
+        model_comparison_figure=payload_artifacts[6],
+        model_comparison_checksum=payload_artifacts[7],
+        manifest=manifest_artifact,
+        manifest_checksum=_checksum_artifact(
+            manifest_artifact,
+            ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
         ),
     )
 
