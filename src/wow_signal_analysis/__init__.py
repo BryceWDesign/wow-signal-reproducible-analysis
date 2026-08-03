@@ -10,6 +10,19 @@ from wow_signal_analysis.analysis_snapshot import (
     SnapshotConfig,
     build_analysis_snapshot,
 )
+from wow_signal_analysis.artifacts import (
+    ANALYSIS_ARTIFACT_BUNDLE_ID,
+    ANALYSIS_ARTIFACT_DIRECTORY,
+    ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
+    ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
+    AnalysisArtifactBundle,
+    ArtifactGenerationError,
+    ArtifactWriteResult,
+    GeneratedArtifact,
+    build_analysis_artifact_bundle,
+    verify_written_analysis_artifacts,
+    write_analysis_artifact_bundle,
+)
 from wow_signal_analysis.beam_model import (
     BeamModelError,
     BeamSampleFit,
@@ -166,6 +179,10 @@ PROJECT_SLUG: Final = "wow-signal-reproducible-analysis"
 __version__: Final = "0.1.0"
 
 __all__ = [
+    "ANALYSIS_ARTIFACT_BUNDLE_ID",
+    "ANALYSIS_ARTIFACT_DIRECTORY",
+    "ANALYSIS_SNAPSHOT_ARTIFACT_PATH",
+    "ANALYSIS_SNAPSHOT_CHECKSUM_PATH",
     "ANALYSIS_SNAPSHOT_ID",
     "ANALYSIS_SNAPSHOT_SCHEMA_VERSION",
     "CANONICAL_DATASET_PATH",
@@ -186,10 +203,13 @@ __all__ = [
     "WOW_PRINTER_SEQUENCE",
     "WOW_SAMPLE_CADENCE_SECONDS",
     "AdjacentChange",
+    "AnalysisArtifactBundle",
     "AnalysisSnapshot",
     "AnalysisSnapshotError",
+    "ArtifactGenerationError",
     "ArtifactStatus",
     "ArtifactVerification",
+    "ArtifactWriteResult",
     "BeamModelError",
     "BeamSampleFit",
     "BitPolarity",
@@ -214,6 +234,7 @@ __all__ = [
     "FrequencyOffset",
     "GaussianSearchConfig",
     "GaussianTransitFit",
+    "GeneratedArtifact",
     "GlyphComparisonCount",
     "GlyphNullSummary",
     "HypothesisMatrix",
@@ -265,6 +286,7 @@ __all__ = [
     "analyze_threshold_morse",
     "apply_threshold",
     "bind_hypothesis_matrix",
+    "build_analysis_artifact_bundle",
     "build_analysis_snapshot",
     "canonical_wow_samples",
     "compare_shape_models",
@@ -295,4 +317,6 @@ __all__ = [
     "unique_permutation_count",
     "verify_manifest_artifacts",
     "verify_repository_contract",
+    "verify_written_analysis_artifacts",
+    "write_analysis_artifact_bundle",
 ]
