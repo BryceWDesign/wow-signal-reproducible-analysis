@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "dataset_id": "wow-hydrogen-frequency-context-v1",
+  "title": "Neutral-hydrogen line and Wow! signal frequency estimates",
+  "description": "A machine-readable reference binding the H I 21 cm rest frequency to one historical and one modern Wow! signal frequency estimate without treating either estimate as a decoded message.",
+  "rights_statement": "The local JSON is a normalized factual transcription prepared for reproducible analysis. Rights in external publications and webpages remain with their respective authors and publishers.",
+  "artifacts": [
+    {
+      "path": "data/reference/frequency_context.json",
+      "sha256": "02cbdc4c23aa4f1a6487031a37ce11668392a8684d7a5fe9cea11991dfe38776",
+      "media_type": "application/json",
+      "description": "Neutral-hydrogen rest frequency and two explicitly sourced Wow! signal frequency estimates.",
+      "record_count": 3
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "nrao-hi-rest-frequency",
+      "creator": "National Radio Astronomy Observatory",
+      "title": "The Impact of Real-Time RFI Blanking on H I 21 cm Observations",
+      "publisher": "NRAO Science Site",
+      "url": "https://science.nrao.edu/facilities/vla/docs/manuals/obsguide/rfi-blanking-at-l-band/real-time-rfi-blanking-951-1431mhz",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Authoritative technical reference for the neutral-hydrogen 21 cm rest frequency.",
+      "supports": [
+        "neutral-hydrogen line identity",
+        "1420.405752 MHz rest frequency"
+      ]
+    },
+    {
+      "source_id": "ehman-wow-30th-report",
+      "creator": "Jerry R. Ehman",
+      "title": "The Big Ear Wow! Signal: What We Know and Don't Know About It After 30 Years",
+      "publisher": "Ohio State University Radio Observatory / Big Ear",
+      "url": "https://www.bigear.org/Wow30th/wow30th.htm",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Primary historical analysis for the 1420.4556 MHz frequency estimate and its stated uncertainty.",
+      "supports": [
+        "historical Wow! signal frequency estimate",
+        "historical frequency uncertainty"
+      ]
+    },
+    {
+      "source_id": "mendez-et-al-2025",
+      "creator": "Abel Méndez et al.",
+      "title": "Arecibo Wow! II: Revised Properties of the Wow! Signal from Archival Ohio SETI Data",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2508.10657",
+      "publication_date": "2025-08-14",
+      "accessed_date": "2026-08-03",
+      "role": "Research-preprint source for the recalibrated 1420.726 MHz frequency estimate and its stated uncertainty.",
+      "supports": [
+        "recalibrated Wow! signal frequency estimate",
+        "recalibrated frequency uncertainty",
+        "preprint status of the revised estimate"
+      ]
+    }
+  ]
+}
