@@ -52,6 +52,7 @@ def test_default_gate_order_is_deterministic(
         "pytest",
         "package-build",
         "repository-contract",
+        "release-reproduction",
     )
     assert steps[0].command == (
         "python-test",
@@ -60,11 +61,16 @@ def test_default_gate_order_is_deterministic(
         "check",
         ".",
     )
-    assert steps[-1].command[:4] == (
+    assert steps[-2].command[:4] == (
         "python-test",
         "-m",
         "wow_signal_analysis",
         "verify",
+    )
+    assert steps[-1].command[:3] == (
+        "python-test",
+        "-m",
+        "wow_signal_analysis.release_verification",
     )
     assert (
         str(_REPOSITORY_ROOT.resolve())
@@ -85,7 +91,8 @@ def test_build_step_can_be_skipped(
     assert "package-build" not in {
         step.step_id for step in steps
     }
-    assert len(steps) == 5
+    assert len(steps) == 6
+    assert steps[-1].step_id == "release-reproduction"
 
 
 def test_successful_gate_runs_every_step(
@@ -127,8 +134,8 @@ def test_successful_gate_runs_every_step(
     )
 
     assert report.passed
-    assert len(report.results) == 6
-    assert len(commands) == 6
+    assert len(report.results) == 7
+    assert len(commands) == 7
     assert report.failed_results == ()
 
 
@@ -137,7 +144,7 @@ def test_gate_stops_at_first_failure_by_default(
     check_green: ModuleType,
 ) -> None:
     return_codes = iter(
-        (0, 7, 0, 0, 0, 0)
+        (0, 7, 0, 0, 0, 0, 0)
     )
 
     def fake_run(
@@ -162,7 +169,7 @@ def test_gate_stops_at_first_failure_by_default(
 
     assert not report.passed
     assert len(report.results) == 2
-    assert report.planned_step_count == 6
+    assert report.planned_step_count == 7
     assert tuple(
         result.step.step_id
         for result in report.failed_results
@@ -174,7 +181,7 @@ def test_continue_on_failure_runs_the_complete_gate(
     check_green: ModuleType,
 ) -> None:
     return_codes = iter(
-        (1, 0, 2, 0, 0)
+        (1, 0, 2, 0, 0, 3)
     )
 
     def fake_run(
@@ -199,13 +206,14 @@ def test_continue_on_failure_runs_the_complete_gate(
     )
 
     assert not report.passed
-    assert len(report.results) == 5
+    assert len(report.results) == 6
     assert tuple(
         result.step.step_id
         for result in report.failed_results
     ) == (
         "ruff-check",
         "mypy",
+        "release-reproduction",
     )
 
 
