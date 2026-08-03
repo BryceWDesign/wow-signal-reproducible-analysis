@@ -10,6 +10,8 @@ from wow_signal_analysis.claim_ledger import (
     ClaimLedger,
     ClaimRecord,
     ClaimVerdict,
+    EvidenceKind,
+    EvidenceRecord,
 )
 from wow_signal_analysis.hypothesis_matrix import (
     HYPOTHESIS_MATRIX_MANIFEST_PATH,
@@ -46,12 +48,19 @@ def _claim(
 
 
 def _claim_ledger() -> ClaimLedger:
+    evidence = EvidenceRecord(
+        evidence_id="analysis-test",
+        kind=EvidenceKind.ANALYSIS,
+        locator="example.module:run",
+        description="Test analysis used by hypothesis binding fixtures.",
+    )
+
     return ClaimLedger(
         schema_version=1,
         ledger_id="wow-signal-evidence-claims-v1",
         title="Test claim ledger",
         scope_note="Claims required by the canonical hypothesis matrix.",
-        evidence=(),
+        evidence=(evidence,),
         claims=(
             _claim(
                 "derived-gaussian-compatibility",
@@ -216,13 +225,14 @@ def test_morse_intent_and_extraterrestrial_origin_remain_unestablished() -> None
 
 def test_binding_fails_when_a_claim_id_is_absent() -> None:
     matrix = load_hypothesis_matrix(_MATRIX_PATH)
+    complete_ledger = _claim_ledger()
     incomplete_ledger = ClaimLedger(
         schema_version=1,
         ledger_id="incomplete-ledger",
         title="Incomplete ledger",
         scope_note="Validation test.",
-        evidence=(),
-        claims=_claim_ledger().claims[:-1],
+        evidence=complete_ledger.evidence,
+        claims=complete_ledger.claims[:-1],
     )
 
     with pytest.raises(ValueError, match="found 0"):
