@@ -1,0 +1,259 @@
+{
+  "schema_version": 1,
+  "ledger_id": "wow-signal-evidence-claims-v1",
+  "title": "Evidence-bound claim ledger for the 1977 Wow! signal analysis",
+  "scope_note": "Claims are classified by evidentiary status. Reproducible transformations are not treated as proof of transmitter intent, artificial origin, or extraterrestrial authorship.",
+  "evidence": [
+    {
+      "evidence_id": "dataset-wow-6equj5",
+      "kind": "dataset",
+      "locator": "data/raw/wow_6equj5.csv",
+      "description": "Normalized six-sample printer sequence with documented signal-to-noise intervals and midpoint estimates."
+    },
+    {
+      "evidence_id": "analysis-sequence-profile",
+      "kind": "analysis",
+      "locator": "wow_signal_analysis.profile:analyze_samples",
+      "description": "Deterministic adjacent-change, peak, reversal, and mirror analysis."
+    },
+    {
+      "evidence_id": "analysis-gaussian-transit",
+      "kind": "analysis",
+      "locator": "wow_signal_analysis.beam_model:fit_gaussian_transit",
+      "description": "Deterministic zero-baseline Gaussian fit to the midpoint sequence."
+    },
+    {
+      "evidence_id": "analysis-shape-comparison",
+      "kind": "analysis",
+      "locator": "wow_signal_analysis.model_comparison:compare_shape_models",
+      "description": "Leave-one-out comparison of constant, affine, quadratic, and Gaussian-transit models."
+    },
+    {
+      "evidence_id": "analysis-threshold-morse",
+      "kind": "analysis",
+      "locator": "wow_signal_analysis.morse_correspondence:analyze_threshold_morse",
+      "description": "Exhaustive threshold, direction, and polarity comparison against the verified Morse registry."
+    },
+    {
+      "evidence_id": "analysis-permutation-null",
+      "kind": "analysis",
+      "locator": "wow_signal_analysis.null_model:analyze_permutation_null",
+      "description": "Exact permutation control preserving the six observed amplitudes."
+    },
+    {
+      "evidence_id": "reference-itu-morse",
+      "kind": "standard",
+      "locator": "data/reference/itu_m1677_1_morse_symbols.json",
+      "description": "Normalized printable symbol assignments from ITU-R M.1677-1."
+    },
+    {
+      "evidence_id": "reference-frequency-context",
+      "kind": "dataset",
+      "locator": "data/reference/frequency_context.json",
+      "description": "Sourced neutral-hydrogen rest frequency and distinct Wow! frequency estimates."
+    },
+    {
+      "evidence_id": "source-big-ear-report",
+      "kind": "source",
+      "locator": "https://www.bigear.org/Wow30th/wow30th.htm",
+      "description": "Jerry R. Ehman's technical account of the observation, timing, and interpretive limits."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "observed-printer-sequence",
+      "statement": "The normalized surviving printer sequence used by this repository is 6EQUJ5.",
+      "classification": "observed",
+      "verdict": "supported",
+      "evidence_ids": [
+        "dataset-wow-6equj5",
+        "source-big-ear-report"
+      ],
+      "depends_on": [],
+      "limitations": [
+        "The printer characters encode receiver-strength bins, not transmitted alphabet symbols."
+      ]
+    },
+    {
+      "claim_id": "derived-strict-single-peak",
+      "statement": "The six midpoint estimates strictly rise to one interior maximum and then strictly fall.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "dataset-wow-6equj5",
+        "analysis-sequence-profile"
+      ],
+      "depends_on": [
+        "observed-printer-sequence"
+      ],
+      "limitations": [
+        "The result describes the retained six-sample envelope and does not identify its physical cause."
+      ]
+    },
+    {
+      "claim_id": "derived-gaussian-compatibility",
+      "statement": "A zero-baseline Gaussian transit model fits the six midpoint estimates with small residuals.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "dataset-wow-6equj5",
+        "analysis-gaussian-transit"
+      ],
+      "depends_on": [
+        "observed-printer-sequence"
+      ],
+      "limitations": [
+        "Model fit establishes shape compatibility, not source identity."
+      ]
+    },
+    {
+      "claim_id": "derived-gaussian-loocv-ranking",
+      "statement": "Under the repository's predeclared leave-one-out comparison, the Gaussian-transit model has the lowest held-out error of the four tested models.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "analysis-shape-comparison"
+      ],
+      "depends_on": [
+        "derived-gaussian-compatibility"
+      ],
+      "limitations": [
+        "The ranking applies only to the declared candidate models and six retained samples."
+      ]
+    },
+    {
+      "claim_id": "derived-question-mark-correspondence",
+      "statement": "The central two-high/four-low threshold partition maps to the International Morse question mark when high is assigned to dash.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "analysis-threshold-morse",
+        "reference-itu-morse"
+      ],
+      "depends_on": [
+        "observed-printer-sequence"
+      ],
+      "limitations": [
+        "The threshold and polarity are analyst-declared transformations, not recovered transmitter metadata."
+      ]
+    },
+    {
+      "claim_id": "derived-comma-correspondence",
+      "statement": "The same central threshold partition maps to the International Morse comma when high is assigned to dot.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "analysis-threshold-morse",
+        "reference-itu-morse"
+      ],
+      "depends_on": [
+        "derived-question-mark-correspondence"
+      ],
+      "limitations": [
+        "The opposite-polarity match demonstrates that the symbolic interpretation is non-unique."
+      ]
+    },
+    {
+      "claim_id": "derived-question-null-frequency",
+      "statement": "Under the exact six-value permutation control and both directions and polarities, the question-mark correspondence occurs in 96 of 720 unique orderings.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "analysis-permutation-null"
+      ],
+      "depends_on": [
+        "derived-question-mark-correspondence"
+      ],
+      "limitations": [
+        "This is an exchangeability control over temporal orderings, not a probability that the historical source was artificial."
+      ]
+    },
+    {
+      "claim_id": "derived-frequency-context",
+      "statement": "The repository preserves distinct sourced Wow! frequency estimates and computes each offset from the neutral-hydrogen rest frequency without merging them.",
+      "classification": "derived",
+      "verdict": "reproducible",
+      "evidence_ids": [
+        "reference-frequency-context"
+      ],
+      "depends_on": [],
+      "limitations": [
+        "Frequency proximity alone does not establish artificial origin or intentional selection."
+      ]
+    },
+    {
+      "claim_id": "compatible-beacon-hypothesis",
+      "statement": "A stable artificial carrier or beacon is compatible with the coarse retained strength envelope.",
+      "classification": "compatibility",
+      "verdict": "compatible-not-proven",
+      "evidence_ids": [
+        "analysis-gaussian-transit",
+        "source-big-ear-report"
+      ],
+      "depends_on": [
+        "derived-gaussian-compatibility"
+      ],
+      "limitations": [
+        "Natural emission and other non-beacon explanations remain compatible with the surviving measurements."
+      ]
+    },
+    {
+      "claim_id": "interpretive-five-layer-summary",
+      "statement": "PRESENCE, TRANSIT, BEACON, HYDROGEN, and QUESTION may be used as a labeled five-layer summary of the analysis.",
+      "classification": "interpretive",
+      "verdict": "summary-only",
+      "evidence_ids": [
+        "analysis-sequence-profile",
+        "analysis-gaussian-transit",
+        "reference-frequency-context",
+        "analysis-threshold-morse"
+      ],
+      "depends_on": [
+        "derived-strict-single-peak",
+        "derived-gaussian-compatibility",
+        "derived-frequency-context",
+        "derived-question-mark-correspondence",
+        "compatible-beacon-hypothesis"
+      ],
+      "limitations": [
+        "The five terms do not constitute recovered plaintext and must not be presented as words intentionally transmitted by the source."
+      ]
+    },
+    {
+      "claim_id": "speculative-intentional-message",
+      "statement": "The source intentionally encoded a linguistic or machine-readable message in the retained six-sample envelope.",
+      "classification": "speculative",
+      "verdict": "not-established",
+      "evidence_ids": [
+        "source-big-ear-report",
+        "analysis-threshold-morse",
+        "analysis-permutation-null"
+      ],
+      "depends_on": [
+        "derived-question-mark-correspondence",
+        "derived-question-null-frequency"
+      ],
+      "limitations": [
+        "The surviving data do not preserve the timing, phase, or fine spectral structure needed to establish a payload."
+      ]
+    },
+    {
+      "claim_id": "speculative-extraterrestrial-technology",
+      "statement": "The historical event was produced by extraterrestrial technology.",
+      "classification": "speculative",
+      "verdict": "not-established",
+      "evidence_ids": [
+        "source-big-ear-report",
+        "analysis-gaussian-transit",
+        "reference-frequency-context"
+      ],
+      "depends_on": [
+        "compatible-beacon-hypothesis",
+        "derived-frequency-context"
+      ],
+      "limitations": [
+        "Compatibility with an artificial carrier is not evidence sufficient to identify extraterrestrial technology."
+      ]
+    }
+  ]
+}
