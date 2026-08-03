@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "rest_line": {
+    "line_id": "neutral-hydrogen-21cm",
+    "species": "neutral atomic hydrogen (H I)",
+    "transition": "ground-state hyperfine transition",
+    "rest_frequency_mhz": "1420.405752",
+    "source_id": "nrao-hi-rest-frequency"
+  },
+  "wow_frequency_estimates": [
+    {
+      "estimate_id": "ehman-historical-2008",
+      "frequency_mhz": "1420.4556",
+      "uncertainty_mhz": "0.005",
+      "status": "historical-analysis",
+      "source_id": "ehman-wow-30th-report",
+      "notes": "Historical Big Ear analysis based on the receiver configuration and surviving printout documentation."
+    },
+    {
+      "estimate_id": "mendez-et-al-2025-v1",
+      "frequency_mhz": "1420.726",
+      "uncertainty_mhz": "0.005",
+      "status": "research-preprint",
+      "source_id": "mendez-et-al-2025",
+      "notes": "Recalibrated estimate reported in version 1 of the 2025 Arecibo Wow! II preprint."
+    }
+  ]
+}
