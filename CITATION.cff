@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "Please cite this software when using its data, analyses, or generated artifacts."
+type: software
+title: "Reproducible Analysis of the Wow! Signal"
+version: 0.1.0
+authors:
+  - family-names: Lovell
+    given-names: Bryce
+license: Apache-2.0
+abstract: >-
+  Reproducible, evidence-bound forensic analysis of the 1977 Wow! signal,
+  including printer-bin reconstruction, beam-transit modeling, hydrogen-line
+  context, exhaustive threshold and International Morse tests, exact
+  permutation controls, uncertainty analysis, and explicit claim boundaries.
+keywords:
+  - wow-signal
+  - 6equj5
+  - seti
+  - technosignatures
+  - radio-astronomy
+  - signal-processing
+  - reproducible-research
