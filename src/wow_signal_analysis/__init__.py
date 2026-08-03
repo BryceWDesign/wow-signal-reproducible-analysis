@@ -183,6 +183,15 @@ from wow_signal_analysis.thresholds import (
     enumerate_threshold_cases,
     find_threshold_case,
 )
+from wow_signal_analysis.visualization import (
+    ANALYSIS_FIGURE_SET_ID,
+    BEAM_FIT_FIGURE_ID,
+    MODEL_COMPARISON_FIGURE_ID,
+    AnalysisFigureSet,
+    SvgFigure,
+    VisualizationError,
+    build_analysis_figures,
+)
 
 DISPLAY_NAME: Final = "Reproducible Analysis of the Wow! Signal"
 PROJECT_SLUG: Final = "wow-signal-reproducible-analysis"
@@ -191,6 +200,7 @@ __version__: Final = "0.1.0"
 __all__ = [
     "ANALYSIS_ARTIFACT_BUNDLE_ID",
     "ANALYSIS_ARTIFACT_DIRECTORY",
+    "ANALYSIS_FIGURE_SET_ID",
     "ANALYSIS_REPORT_ARTIFACT_PATH",
     "ANALYSIS_REPORT_CHECKSUM_PATH",
     "ANALYSIS_REPORT_ID",
@@ -199,6 +209,7 @@ __all__ = [
     "ANALYSIS_SNAPSHOT_CHECKSUM_PATH",
     "ANALYSIS_SNAPSHOT_ID",
     "ANALYSIS_SNAPSHOT_SCHEMA_VERSION",
+    "BEAM_FIT_FIGURE_ID",
     "CANONICAL_DATASET_PATH",
     "CANONICAL_MANIFEST_PATH",
     "CLAIM_LEDGER_MANIFEST_PATH",
@@ -209,6 +220,7 @@ __all__ = [
     "FREQUENCY_REFERENCE_PATH",
     "HYPOTHESIS_MATRIX_MANIFEST_PATH",
     "HYPOTHESIS_MATRIX_REFERENCE_PATH",
+    "MODEL_COMPARISON_FIGURE_ID",
     "MORSE_MANIFEST_PATH",
     "MORSE_REFERENCE_PATH",
     "MORSE_STANDARD_ID",
@@ -218,6 +230,7 @@ __all__ = [
     "WOW_SAMPLE_CADENCE_SECONDS",
     "AdjacentChange",
     "AnalysisArtifactBundle",
+    "AnalysisFigureSet",
     "AnalysisSnapshot",
     "AnalysisSnapshotError",
     "ArtifactGenerationError",
@@ -289,11 +302,13 @@ __all__ = [
     "SourceManifest",
     "SourceReference",
     "SpectralLineReference",
+    "SvgFigure",
     "ThresholdCase",
     "ThresholdError",
     "ThresholdMorseComparison",
     "Trend",
     "VerifiedComponent",
+    "VisualizationError",
     "__version__",
     "analyze_midpoint_values",
     "analyze_permutation_null",
@@ -303,6 +318,7 @@ __all__ = [
     "apply_threshold",
     "bind_hypothesis_matrix",
     "build_analysis_artifact_bundle",
+    "build_analysis_figures",
     "build_analysis_report",
     "build_analysis_snapshot",
     "canonical_wow_samples",
