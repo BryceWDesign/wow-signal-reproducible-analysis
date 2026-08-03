@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "dataset_id": "itu-r-m1677-1-printable-morse-symbols-v1",
+  "title": "Normalized International Morse code printable symbol registry",
+  "description": "A machine-readable transcription of printable Morse assignments used to test threshold-derived patterns without inventing a private codebook.",
+  "rights_statement": "The local JSON is a normalized factual transcription of code assignments and does not reproduce the recommendation's prose, layout, or publication file. Rights in the ITU source publication remain with the International Telecommunication Union.",
+  "artifacts": [
+    {
+      "path": "data/reference/itu_m1677_1_morse_symbols.json",
+      "sha256": "8e8d5d3f731753daf4ff9922eb7dd8fb1eaa638c1db55f1b1634481259fe842f",
+      "media_type": "application/json",
+      "description": "Printable letters, figures, punctuation marks, and miscellaneous written signs from ITU-R M.1677-1 sections 1.1.1 through 1.1.3.",
+      "record_count": 51
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "itu-r-m1677-1",
+      "creator": "International Telecommunication Union Radiocommunication Sector",
+      "title": "Recommendation ITU-R M.1677-1: International Morse code",
+      "publisher": "International Telecommunication Union",
+      "url": "https://www.itu.int/rec/R-REC-M.1677-1-200910-I/en",
+      "publication_date": "2009-10-03",
+      "accessed_date": "2026-08-03",
+      "role": "Authoritative reference for International Morse code character assignments and signal timing.",
+      "supports": [
+        "printable Morse character assignments",
+        "question mark pattern",
+        "comma pattern",
+        "dot and dash timing definitions"
+      ]
+    }
+  ]
+}
