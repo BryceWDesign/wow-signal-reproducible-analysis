@@ -187,18 +187,32 @@ def build_check_steps(
             )
         )
 
-    steps.append(
-        CheckStep(
-            step_id="repository-contract",
-            label="Canonical repository contract",
-            command=(
-                python_executable,
-                "-m",
-                _PROJECT_PACKAGE,
-                "verify",
-                "--root",
-                str(root),
-                "--json",
+    steps.extend(
+        (
+            CheckStep(
+                step_id="repository-contract",
+                label="Canonical repository contract",
+                command=(
+                    python_executable,
+                    "-m",
+                    _PROJECT_PACKAGE,
+                    "verify",
+                    "--root",
+                    str(root),
+                    "--json",
+                ),
+            ),
+            CheckStep(
+                step_id="release-reproduction",
+                label="Isolated release reproduction",
+                command=(
+                    python_executable,
+                    "-m",
+                    f"{_PROJECT_PACKAGE}.release_verification",
+                    "--root",
+                    str(root),
+                    "--json",
+                ),
             ),
         )
     )
@@ -290,7 +304,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Run lint, formatting, typing, tests, package build, "
-            "and the canonical repository verification contract."
+            "canonical verification, and isolated release reproduction."
         )
     )
     parser.add_argument(
