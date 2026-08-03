@@ -1,4 +1,4 @@
-"""Command-line verification and deterministic artifact-generation workflow."""
+"""Command-line verification, generation, and artifact-audit workflow."""
 
 from __future__ import annotations
 
@@ -14,6 +14,10 @@ from typing import TextIO, cast
 from wow_signal_analysis.analysis_snapshot import (
     SnapshotConfig,
     build_analysis_snapshot,
+)
+from wow_signal_analysis.artifact_audit import (
+    ArtifactAuditReport,
+    audit_generated_artifacts,
 )
 from wow_signal_analysis.artifacts import (
     ArtifactWriteResult,
@@ -51,6 +55,15 @@ class VerifyOptions:
 
 
 @dataclass(frozen=True, slots=True)
+class AuditOptions:
+    """Parsed options for independent generated-artifact auditing."""
+
+    repository_root: Path
+    output: CommandOutput
+    strict_directory: bool
+
+
+@dataclass(frozen=True, slots=True)
 class GenerateOptions:
     """Parsed options for deterministic snapshot artifact handling."""
 
@@ -63,7 +76,7 @@ class GenerateOptions:
     max_unique_sequences: int
 
 
-CommandOptions = VerifyOptions | GenerateOptions
+CommandOptions = VerifyOptions | AuditOptions | GenerateOptions
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,10 +116,7 @@ class VerificationCommandResult:
             f"Morse standard: {self.report.morse_standard_id}",
             f"Claim ledger: {self.report.claim_ledger_id}",
             f"Hypothesis matrix: {self.report.hypothesis_matrix_id}",
-            (
-                "Verified components: "
-                f"{self.report.verified_component_count}"
-            ),
+            f"Verified components: {self.report.verified_component_count}",
             f"Canonical records: {self.report.total_record_count}",
             "Components:",
         ]
@@ -118,6 +128,73 @@ class VerificationCommandResult:
                 f"[{component.artifact_path}]"
             )
             for component in self.report.components
+        )
+        return "\n".join(lines) + "\n"
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactAuditCommandResult:
+    """Portable rendering of an independent generated-artifact audit."""
+
+    report: ArtifactAuditReport
+
+    def to_mapping(self) -> dict[str, object]:
+        """Return a deterministic JSON-compatible audit result."""
+
+        return {
+            "command": "audit",
+            "status": "ok",
+            "audit_id": self.report.audit_id,
+            "bundle_id": self.report.bundle_id,
+            "analysis_id": self.report.analysis_id,
+            "strict_directory": self.report.strict_directory,
+            "artifact_count": self.report.artifact_count,
+            "total_byte_count": self.report.total_byte_count,
+            "manifest": {
+                "byte_count": self.report.manifest_byte_count,
+                "sha256": self.report.manifest_sha256_hex,
+            },
+            "artifacts": [
+                {
+                    "relative_path": str(artifact.relative_path),
+                    "media_type": artifact.media_type,
+                    "byte_count": artifact.byte_count,
+                    "sha256": artifact.sha256_hex,
+                }
+                for artifact in self.report.artifacts
+            ],
+        }
+
+    def to_text(self) -> str:
+        """Return a stable human-readable audit summary."""
+
+        inventory_mode = (
+            "strict"
+            if self.report.strict_directory
+            else "allow-extra-files"
+        )
+        lines = [
+            "Generated artifact audit: verified",
+            f"Audit: {self.report.audit_id}",
+            f"Bundle: {self.report.bundle_id}",
+            f"Analysis: {self.report.analysis_id}",
+            f"Directory inventory: {inventory_mode}",
+            f"Payload artifacts: {self.report.artifact_count}",
+            f"Payload bytes: {self.report.total_byte_count}",
+            (
+                "Manifest: "
+                f"{self.report.manifest_byte_count} bytes "
+                f"[sha256:{self.report.manifest_sha256_hex}]"
+            ),
+            "Artifacts:",
+        ]
+        lines.extend(
+            (
+                f"  - {artifact.relative_path}: "
+                f"{artifact.byte_count} bytes "
+                f"[sha256:{artifact.sha256_hex}]"
+            )
+            for artifact in self.report.artifacts
         )
         return "\n".join(lines) + "\n"
 
@@ -191,7 +268,11 @@ class ArtifactCommandResult:
         return "\n".join(lines) + "\n"
 
 
-CommandResult = VerificationCommandResult | ArtifactCommandResult
+CommandResult = (
+    VerificationCommandResult
+    | ArtifactAuditCommandResult
+    | ArtifactCommandResult
+)
 
 
 def main(
@@ -210,6 +291,8 @@ def main(
 
         if isinstance(options, VerifyOptions):
             result: CommandResult = _run_verify(options)
+        elif isinstance(options, AuditOptions):
+            result = _run_audit(options)
         else:
             result = _run_generate(options)
 
@@ -224,6 +307,14 @@ def main(
 def _run_verify(options: VerifyOptions) -> VerificationCommandResult:
     report = verify_repository_contract(options.repository_root)
     return VerificationCommandResult(report=report)
+
+
+def _run_audit(options: AuditOptions) -> ArtifactAuditCommandResult:
+    report = audit_generated_artifacts(
+        options.repository_root,
+        strict_directory=options.strict_directory,
+    )
+    return ArtifactAuditCommandResult(report=report)
 
 
 def _run_generate(options: GenerateOptions) -> ArtifactCommandResult:
@@ -296,6 +387,14 @@ def _parse_arguments(
             output=output,
         )
 
+    if command == "audit":
+        allow_extra_files = cast(bool, namespace.allow_extra_files)
+        return AuditOptions(
+            repository_root=repository_root,
+            output=output,
+            strict_directory=not allow_extra_files,
+        )
+
     glyph_values = cast(list[str] | None, namespace.glyphs)
     selected_glyphs = (
         tuple(glyph_values)
@@ -343,8 +442,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="wow-signal-analysis",
         description=(
-            "Verify canonical evidence or reproduce the deterministic "
-            "Wow! signal analysis artifacts."
+            "Verify canonical evidence, reproduce deterministic artifacts, "
+            "or audit generated files independently."
         ),
     )
     subparsers = parser.add_subparsers(
@@ -357,6 +456,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Verify canonical artifacts, manifests, and cross-bindings.",
     )
     _add_common_options(verify_parser)
+
+    audit_parser = subparsers.add_parser(
+        "audit",
+        help="Audit generated artifacts from their content manifest.",
+    )
+    _add_common_options(audit_parser)
+    audit_parser.add_argument(
+        "--allow-extra-files",
+        action="store_true",
+        help=(
+            "Permit unmanifested regular files while still verifying every "
+            "canonical artifact, digest, byte count, and checksum."
+        ),
+    )
 
     generate_parser = subparsers.add_parser(
         "generate",
