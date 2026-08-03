@@ -138,6 +138,12 @@ from wow_signal_analysis.quantization import (
     QuantizationSensitivityReport,
     analyze_quantization_corners,
 )
+from wow_signal_analysis.repository_contract import (
+    RepositoryContractError,
+    RepositoryContractReport,
+    VerifiedComponent,
+    verify_repository_contract,
+)
 from wow_signal_analysis.thresholds import (
     BitPolarity,
     ThresholdCase,
@@ -225,6 +231,8 @@ __all__ = [
     "QuantizationCornerFit",
     "QuantizationError",
     "QuantizationSensitivityReport",
+    "RepositoryContractError",
+    "RepositoryContractReport",
     "SequenceDirection",
     "SequenceProfile",
     "SignalSample",
@@ -235,6 +243,7 @@ __all__ = [
     "ThresholdError",
     "ThresholdMorseComparison",
     "Trend",
+    "VerifiedComponent",
     "__version__",
     "analyze_midpoint_values",
     "analyze_permutation_null",
@@ -271,4 +280,5 @@ __all__ = [
     "sha256_file",
     "unique_permutation_count",
     "verify_manifest_artifacts",
+    "verify_repository_contract",
 ]
