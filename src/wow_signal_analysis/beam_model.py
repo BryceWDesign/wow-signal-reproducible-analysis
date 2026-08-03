@@ -61,8 +61,8 @@ class BeamSampleFit:
             raise BeamModelError("sample_index must be non-negative")
         if not self.elapsed_seconds.is_finite() or self.elapsed_seconds < 0:
             raise BeamModelError("elapsed_seconds must be non-negative and finite")
-        if not self.observed_snr.is_finite():
-            raise BeamModelError("observed_snr must be finite")
+        if not self.observed_snr.is_finite() or self.observed_snr < 0:
+            raise BeamModelError("observed_snr must be non-negative and finite")
         if not math.isfinite(self.predicted_snr) or self.predicted_snr < 0.0:
             raise BeamModelError("predicted_snr must be non-negative and finite")
         if not math.isfinite(self.residual_snr):
@@ -136,6 +136,23 @@ class GaussianTransitFit:
         ):
             raise BeamModelError("sum_squared_error does not match sample residuals")
 
+        expected_rmse = math.sqrt(self.sum_squared_error / len(self.samples))
+        if not math.isclose(
+            self.root_mean_squared_error,
+            expected_rmse,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise BeamModelError(
+                "root_mean_squared_error does not match sum_squared_error"
+            )
+
+    @property
+    def sample_count(self) -> int:
+        """Return the number of observations included in the fit."""
+
+        return len(self.samples)
+
     def predict(self, elapsed_seconds: float) -> float:
         """Predict signal-to-noise at one elapsed time under the fitted model."""
 
@@ -196,14 +213,38 @@ def fit_gaussian_transit(
     *,
     config: GaussianSearchConfig | None = None,
 ) -> GaussianTransitFit:
-    """Fit a zero-baseline Gaussian transit by deterministic bounded search."""
+    """Fit midpoint estimates from ordered signal samples."""
 
     normalized = tuple(samples)
-    _validate_samples(normalized)
+    if len(normalized) < _MINIMUM_SAMPLES:
+        raise BeamModelError("at least three signal samples are required")
+    if tuple(sample.sample_index for sample in normalized) != tuple(
+        range(len(normalized))
+    ):
+        raise BeamModelError("sample indices must be contiguous and zero-based")
+
+    return fit_gaussian_series(
+        tuple(sample.elapsed_seconds for sample in normalized),
+        tuple(sample.intensity.midpoint_snr for sample in normalized),
+        config=config,
+    )
+
+
+def fit_gaussian_series(
+    elapsed_seconds: Sequence[Decimal],
+    observed_snr: Sequence[Decimal],
+    *,
+    config: GaussianSearchConfig | None = None,
+) -> GaussianTransitFit:
+    """Fit arbitrary decimal observations using the shared Gaussian search."""
+
+    times_decimal = tuple(elapsed_seconds)
+    observed_decimal = tuple(observed_snr)
+    _validate_series(times_decimal, observed_decimal)
     search_config = config or GaussianSearchConfig()
 
-    times = tuple(float(sample.elapsed_seconds) for sample in normalized)
-    observed = tuple(float(sample.intensity.midpoint_snr) for sample in normalized)
+    times = tuple(float(value) for value in times_decimal)
+    observed = tuple(float(value) for value in observed_decimal)
     average_cadence = (times[-1] - times[0]) / (len(times) - 1)
     span = times[-1] - times[0]
 
@@ -225,38 +266,33 @@ def fit_gaussian_transit(
     for _ in range(search_config.refinement_rounds):
         centers = _linspace(center_lower, center_upper, search_config.grid_points)
         sigmas = _linspace(sigma_lower, sigma_upper, search_config.grid_points)
-        candidates = tuple(
-            candidate
-            for center in centers
-            for sigma in sigmas
-            if (
-                candidate := _fit_candidate(
+        round_best: _CandidateFit | None = None
+
+        for center in centers:
+            for sigma in sigmas:
+                candidate = _fit_candidate(
                     times,
                     observed,
                     center,
                     sigma,
                 )
-            )
-            is not None
-        )
-        if not candidates:
+                if candidate is None:
+                    continue
+                if round_best is None or _candidate_key(candidate) < _candidate_key(
+                    round_best
+                ):
+                    round_best = candidate
+
+        if round_best is None:
             raise BeamModelError("Gaussian search produced no finite candidate fit")
+        best = round_best
 
-        best = min(
-            candidates,
-            key=lambda candidate: (
-                candidate.sum_squared_error,
-                candidate.sigma_seconds,
-                candidate.center_seconds,
-            ),
+        center_step = (center_upper - center_lower) / (
+            search_config.grid_points - 1
         )
-
-        center_step = (
-            center_upper - center_lower
-        ) / (search_config.grid_points - 1)
-        sigma_step = (
-            sigma_upper - sigma_lower
-        ) / (search_config.grid_points - 1)
+        sigma_step = (sigma_upper - sigma_lower) / (
+            search_config.grid_points - 1
+        )
 
         center_lower = max(
             original_center_lower,
@@ -278,7 +314,12 @@ def fit_gaussian_transit(
     if best is None:
         raise BeamModelError("Gaussian search produced no candidate fit")
 
-    sample_fits = tuple(_sample_fit(sample, best) for sample in normalized)
+    sample_fits = tuple(
+        _series_sample_fit(index, elapsed, observed_value, best)
+        for index, (elapsed, observed_value) in enumerate(
+            zip(times_decimal, observed_decimal, strict=True)
+        )
+    )
     sse = sum(sample.residual_snr**2 for sample in sample_fits)
     rmse = math.sqrt(sse / len(sample_fits))
     mean_observed = sum(observed) / len(observed)
@@ -301,27 +342,30 @@ def fit_gaussian_transit(
     )
 
 
-def _validate_samples(samples: tuple[SignalSample, ...]) -> None:
-    if len(samples) < _MINIMUM_SAMPLES:
-        raise BeamModelError("at least three signal samples are required")
-    if tuple(sample.sample_index for sample in samples) != tuple(
-        range(len(samples))
-    ):
-        raise BeamModelError("sample indices must be contiguous and zero-based")
+def _validate_series(
+    elapsed_seconds: tuple[Decimal, ...],
+    observed_snr: tuple[Decimal, ...],
+) -> None:
+    if len(elapsed_seconds) != len(observed_snr):
+        raise BeamModelError("elapsed_seconds and observed_snr must have equal length")
+    if len(elapsed_seconds) < _MINIMUM_SAMPLES:
+        raise BeamModelError("at least three observations are required")
+    if any(not value.is_finite() or value < 0 for value in elapsed_seconds):
+        raise BeamModelError("elapsed_seconds must be non-negative and finite")
+    if any(current <= previous for previous, current in pairwise(elapsed_seconds)):
+        raise BeamModelError("elapsed_seconds must be strictly increasing")
+    if any(not value.is_finite() or value < 0 for value in observed_snr):
+        raise BeamModelError("observed_snr must be non-negative and finite")
+    if len(set(observed_snr)) == 1:
+        raise BeamModelError("observed_snr values must not all be equal")
 
-    elapsed = tuple(sample.elapsed_seconds for sample in samples)
-    if any(not value.is_finite() for value in elapsed):
-        raise BeamModelError("sample elapsed times must be finite")
-    if any(current <= previous for previous, current in pairwise(elapsed)):
-        raise BeamModelError("sample elapsed times must be strictly increasing")
 
-    observed = tuple(sample.intensity.midpoint_snr for sample in samples)
-    if any(not value.is_finite() or value < 0 for value in observed):
-        raise BeamModelError(
-            "sample midpoint values must be non-negative and finite"
-        )
-    if len(set(observed)) == 1:
-        raise BeamModelError("sample midpoint values must not all be equal")
+def _candidate_key(candidate: _CandidateFit) -> tuple[float, float, float]:
+    return (
+        candidate.sum_squared_error,
+        candidate.sigma_seconds,
+        candidate.center_seconds,
+    )
 
 
 def _fit_candidate(
@@ -361,24 +405,24 @@ def _fit_candidate(
     )
 
 
-def _sample_fit(
-    sample: SignalSample,
+def _series_sample_fit(
+    sample_index: int,
+    elapsed_seconds: Decimal,
+    observed_snr: Decimal,
     candidate: _CandidateFit,
 ) -> BeamSampleFit:
     predicted = gaussian_response(
-        float(sample.elapsed_seconds),
+        float(elapsed_seconds),
         amplitude_snr=candidate.amplitude_snr,
         center_seconds=candidate.center_seconds,
         sigma_seconds=candidate.sigma_seconds,
     )
-    observed = sample.intensity.midpoint_snr
-
     return BeamSampleFit(
-        sample_index=sample.sample_index,
-        elapsed_seconds=sample.elapsed_seconds,
-        observed_snr=observed,
+        sample_index=sample_index,
+        elapsed_seconds=elapsed_seconds,
+        observed_snr=observed_snr,
         predicted_snr=predicted,
-        residual_snr=float(observed) - predicted,
+        residual_snr=float(observed_snr) - predicted,
     )
 
 
