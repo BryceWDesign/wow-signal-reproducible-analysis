@@ -2,6 +2,15 @@
 
 from typing import Final
 
+from wow_signal_analysis.beam_model import (
+    BeamModelError,
+    BeamSampleFit,
+    GaussianSearchConfig,
+    GaussianTransitFit,
+    fit_gaussian_transit,
+    gaussian_fwhm,
+    gaussian_response,
+)
 from wow_signal_analysis.dataset import (
     CANONICAL_DATASET_PATH,
     CANONICAL_MANIFEST_PATH,
@@ -115,6 +124,8 @@ __all__ = [
     "AdjacentChange",
     "ArtifactStatus",
     "ArtifactVerification",
+    "BeamModelError",
+    "BeamSampleFit",
     "BitPolarity",
     "DatasetArtifact",
     "DatasetError",
@@ -123,6 +134,8 @@ __all__ = [
     "FrequencyEstimate",
     "FrequencyEstimateStatus",
     "FrequencyOffset",
+    "GaussianSearchConfig",
+    "GaussianTransitFit",
     "GlyphComparisonCount",
     "GlyphNullSummary",
     "IntensityCode",
@@ -161,6 +174,9 @@ __all__ = [
     "decode_printer_symbol",
     "enumerate_threshold_cases",
     "find_threshold_case",
+    "fit_gaussian_transit",
+    "gaussian_fwhm",
+    "gaussian_response",
     "iter_unique_permutations",
     "load_frequency_context",
     "load_morse_registry",
