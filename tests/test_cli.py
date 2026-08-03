@@ -14,6 +14,8 @@ from wow_signal_analysis.artifacts import (
     ANALYSIS_ARTIFACT_BUNDLE_ID,
     ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
     ANALYSIS_BEAM_FIT_FIGURE_PATH,
+    ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
+    ANALYSIS_BUNDLE_MANIFEST_PATH,
     ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
     ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
     ANALYSIS_REPORT_ARTIFACT_PATH,
@@ -21,6 +23,7 @@ from wow_signal_analysis.artifacts import (
     ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
     ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
     AnalysisArtifactBundle,
+    AnalysisBundleManifest,
     ArtifactWriteResult,
     GeneratedArtifact,
 )
@@ -144,29 +147,50 @@ def _artifact_bundle() -> AnalysisArtifactBundle:
         "wow-signal-model-comparison-v1",
         "Test model comparison",
     )
+    payload = (
+        snapshot,
+        _checksum_artifact(
+            snapshot,
+            ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
+        ),
+        report,
+        _checksum_artifact(
+            report,
+            ANALYSIS_REPORT_CHECKSUM_PATH,
+        ),
+        beam_fit_figure,
+        _checksum_artifact(
+            beam_fit_figure,
+            ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
+        ),
+        model_comparison_figure,
+        _checksum_artifact(
+            model_comparison_figure,
+            ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+        ),
+    )
+    manifest_model = AnalysisBundleManifest.from_artifacts(payload)
+    manifest = GeneratedArtifact(
+        relative_path=ANALYSIS_BUNDLE_MANIFEST_PATH,
+        media_type="application/json",
+        content=manifest_model.to_json().encode("utf-8"),
+    )
 
     return AnalysisArtifactBundle(
         bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
         analysis_id="wow-signal-canonical-analysis-v1",
-        snapshot=snapshot,
-        checksum=_checksum_artifact(
-            snapshot,
-            ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
-        ),
-        report=report,
-        report_checksum=_checksum_artifact(
-            report,
-            ANALYSIS_REPORT_CHECKSUM_PATH,
-        ),
-        beam_fit_figure=beam_fit_figure,
-        beam_fit_checksum=_checksum_artifact(
-            beam_fit_figure,
-            ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
-        ),
-        model_comparison_figure=model_comparison_figure,
-        model_comparison_checksum=_checksum_artifact(
-            model_comparison_figure,
-            ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+        snapshot=payload[0],
+        checksum=payload[1],
+        report=payload[2],
+        report_checksum=payload[3],
+        beam_fit_figure=payload[4],
+        beam_fit_checksum=payload[5],
+        model_comparison_figure=payload[6],
+        model_comparison_checksum=payload[7],
+        manifest=manifest,
+        manifest_checksum=_checksum_artifact(
+            manifest,
+            ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
         ),
     )
 
@@ -324,7 +348,7 @@ def test_generate_command_passes_explicit_reproducibility_controls(
     assert payload["command"] == "generate"
     assert payload["action"] == "write"
     assert payload["result"] == "written"
-    assert payload["artifact_count"] == 8
+    assert payload["artifact_count"] == 10
     assert captured["overwrite"] is False
     assert config.gaussian_search.grid_points == 21
     assert config.gaussian_search.refinement_rounds == 3
@@ -389,7 +413,7 @@ def test_generate_check_verifies_without_writing(
     assert status == 0
     assert payload["action"] == "check"
     assert payload["result"] == "verified"
-    assert payload["artifact_count"] == 8
+    assert payload["artifact_count"] == 10
     assert tuple(
         artifact["relative_path"] for artifact in payload["artifacts"]
     ) == (
@@ -401,6 +425,8 @@ def test_generate_check_verifies_without_writing(
         "artifacts/generated/beam_fit.sha256",
         "artifacts/generated/model_comparison.svg",
         "artifacts/generated/model_comparison.sha256",
+        "artifacts/generated/artifact_manifest.json",
+        "artifacts/generated/artifact_manifest.sha256",
     )
 
 
