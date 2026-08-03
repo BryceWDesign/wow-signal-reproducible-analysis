@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "dataset_id": "wow-6equj5-normalized-v1",
+  "title": "Normalized 6EQUJ5 intensity sequence",
+  "description": "A six-record transcription of the documented Big Ear printer symbols, timing, signal-to-noise intervals, and interval midpoints used by this repository.",
+  "rights_statement": "This repository does not claim ownership of historical webpages, archival printouts, or telescope records. The local CSV is a normalized factual transcription prepared for reproducible analysis. Rights in external source material remain with their respective holders.",
+  "artifacts": [
+    {
+      "path": "data/raw/wow_6equj5.csv",
+      "sha256": "a68af6a7a1863637e5dca7d01f61d95e15cc45cdfa1b5ccd0e51d4e3b76428ef",
+      "media_type": "text/csv",
+      "description": "Canonical six-sample 6EQUJ5 observation table normalized from Jerry R. Ehman's technical explanations.",
+      "record_count": 6
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "ehman-6equj5-2008",
+      "creator": "Jerry R. Ehman",
+      "title": "Explanation of 6EQUJ5",
+      "publisher": "Ohio State University Radio Observatory / Big Ear",
+      "url": "https://www.bigear.org/6equj5.htm",
+      "publication_date": "2008-02-20",
+      "accessed_date": "2026-08-03",
+      "role": "Primary explanation of the printer encoding and represented signal-to-noise intervals.",
+      "supports": [
+        "printer sequence",
+        "printer symbol decoding",
+        "signal-to-noise interval bounds",
+        "beam-pattern compatibility"
+      ]
+    },
+    {
+      "source_id": "ehman-wow-30th-report",
+      "creator": "Jerry R. Ehman",
+      "title": "The Big Ear Wow! Signal: What We Know and Don't Know About It After 30 Years",
+      "publisher": "Ohio State University Radio Observatory / Big Ear",
+      "url": "https://www.bigear.org/Wow30th/wow30th.htm",
+      "publication_date": null,
+      "accessed_date": "2026-08-03",
+      "role": "Primary technical report documenting acquisition timing and interpretation limits.",
+      "supports": [
+        "ten-second integration interval",
+        "approximately twelve-second sample cadence",
+        "six-sample event duration",
+        "beam-transit interpretation"
+      ]
+    }
+  ]
+}
