@@ -12,6 +12,10 @@ import wow_signal_analysis.cli as cli
 from wow_signal_analysis.analysis_snapshot import AnalysisSnapshot
 from wow_signal_analysis.artifacts import (
     ANALYSIS_ARTIFACT_BUNDLE_ID,
+    ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
+    ANALYSIS_BEAM_FIT_FIGURE_PATH,
+    ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
+    ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
     ANALYSIS_REPORT_ARTIFACT_PATH,
     ANALYSIS_REPORT_CHECKSUM_PATH,
     ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
@@ -89,6 +93,36 @@ def _checksum_artifact(
     )
 
 
+def _svg_artifact(
+    relative_path: PurePosixPath,
+    figure_id: str,
+    title: str,
+) -> GeneratedArtifact:
+    svg = "\n".join(
+        (
+            (
+                '<svg xmlns="http://www.w3.org/2000/svg" '
+                'role="img" '
+                f'aria-labelledby="{figure_id}-title '
+                f'{figure_id}-description">'
+            ),
+            f'<title id="{figure_id}-title">{title}</title>',
+            (
+                f'<desc id="{figure_id}-description">'
+                f"Test figure.</desc>"
+            ),
+            "</svg>",
+            "",
+        )
+    ).encode("utf-8")
+
+    return GeneratedArtifact(
+        relative_path=relative_path,
+        media_type="image/svg+xml",
+        content=svg,
+    )
+
+
 def _artifact_bundle() -> AnalysisArtifactBundle:
     snapshot = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
@@ -99,6 +133,16 @@ def _artifact_bundle() -> AnalysisArtifactBundle:
         relative_path=ANALYSIS_REPORT_ARTIFACT_PATH,
         media_type="text/markdown",
         content=b"# Test analysis report\n",
+    )
+    beam_fit_figure = _svg_artifact(
+        ANALYSIS_BEAM_FIT_FIGURE_PATH,
+        "wow-signal-beam-fit-v1",
+        "Test beam fit",
+    )
+    model_comparison_figure = _svg_artifact(
+        ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
+        "wow-signal-model-comparison-v1",
+        "Test model comparison",
     )
 
     return AnalysisArtifactBundle(
@@ -113,6 +157,16 @@ def _artifact_bundle() -> AnalysisArtifactBundle:
         report_checksum=_checksum_artifact(
             report,
             ANALYSIS_REPORT_CHECKSUM_PATH,
+        ),
+        beam_fit_figure=beam_fit_figure,
+        beam_fit_checksum=_checksum_artifact(
+            beam_fit_figure,
+            ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
+        ),
+        model_comparison_figure=model_comparison_figure,
+        model_comparison_checksum=_checksum_artifact(
+            model_comparison_figure,
+            ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
         ),
     )
 
@@ -270,7 +324,7 @@ def test_generate_command_passes_explicit_reproducibility_controls(
     assert payload["command"] == "generate"
     assert payload["action"] == "write"
     assert payload["result"] == "written"
-    assert payload["artifact_count"] == 4
+    assert payload["artifact_count"] == 8
     assert captured["overwrite"] is False
     assert config.gaussian_search.grid_points == 21
     assert config.gaussian_search.refinement_rounds == 3
@@ -335,7 +389,7 @@ def test_generate_check_verifies_without_writing(
     assert status == 0
     assert payload["action"] == "check"
     assert payload["result"] == "verified"
-    assert payload["artifact_count"] == 4
+    assert payload["artifact_count"] == 8
     assert tuple(
         artifact["relative_path"] for artifact in payload["artifacts"]
     ) == (
@@ -343,6 +397,10 @@ def test_generate_check_verifies_without_writing(
         "artifacts/generated/analysis_snapshot.sha256",
         "artifacts/generated/analysis_report.md",
         "artifacts/generated/analysis_report.sha256",
+        "artifacts/generated/beam_fit.svg",
+        "artifacts/generated/beam_fit.sha256",
+        "artifacts/generated/model_comparison.svg",
+        "artifacts/generated/model_comparison.sha256",
     )
 
 
