@@ -12,6 +12,8 @@ import wow_signal_analysis.cli as cli
 from wow_signal_analysis.analysis_snapshot import AnalysisSnapshot
 from wow_signal_analysis.artifacts import (
     ANALYSIS_ARTIFACT_BUNDLE_ID,
+    ANALYSIS_REPORT_ARTIFACT_PATH,
+    ANALYSIS_REPORT_CHECKSUM_PATH,
     ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
     ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
     AnalysisArtifactBundle,
@@ -72,26 +74,46 @@ def _repository_report(root: Path) -> RepositoryContractReport:
     )
 
 
+def _checksum_artifact(
+    source: GeneratedArtifact,
+    checksum_path: PurePosixPath,
+) -> GeneratedArtifact:
+    content = (
+        f"{source.sha256_hex}  {source.relative_path.name}\n"
+    ).encode("ascii")
+
+    return GeneratedArtifact(
+        relative_path=checksum_path,
+        media_type="text/plain",
+        content=content,
+    )
+
+
 def _artifact_bundle() -> AnalysisArtifactBundle:
     snapshot = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
         media_type="application/json",
         content=b"{}\n",
     )
-    checksum_content = (
-        f"{snapshot.sha256_hex}  analysis_snapshot.json\n"
-    ).encode("ascii")
-    checksum = GeneratedArtifact(
-        relative_path=ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
-        media_type="text/plain",
-        content=checksum_content,
+    report = GeneratedArtifact(
+        relative_path=ANALYSIS_REPORT_ARTIFACT_PATH,
+        media_type="text/markdown",
+        content=b"# Test analysis report\n",
     )
 
     return AnalysisArtifactBundle(
         bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
         analysis_id="wow-signal-canonical-analysis-v1",
         snapshot=snapshot,
-        checksum=checksum,
+        checksum=_checksum_artifact(
+            snapshot,
+            ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
+        ),
+        report=report,
+        report_checksum=_checksum_artifact(
+            report,
+            ANALYSIS_REPORT_CHECKSUM_PATH,
+        ),
     )
 
 
@@ -248,7 +270,7 @@ def test_generate_command_passes_explicit_reproducibility_controls(
     assert payload["command"] == "generate"
     assert payload["action"] == "write"
     assert payload["result"] == "written"
-    assert payload["artifact_count"] == 2
+    assert payload["artifact_count"] == 4
     assert captured["overwrite"] is False
     assert config.gaussian_search.grid_points == 21
     assert config.gaussian_search.refinement_rounds == 3
@@ -313,7 +335,15 @@ def test_generate_check_verifies_without_writing(
     assert status == 0
     assert payload["action"] == "check"
     assert payload["result"] == "verified"
-    assert payload["artifact_count"] == 2
+    assert payload["artifact_count"] == 4
+    assert tuple(
+        artifact["relative_path"] for artifact in payload["artifacts"]
+    ) == (
+        "artifacts/generated/analysis_snapshot.json",
+        "artifacts/generated/analysis_snapshot.sha256",
+        "artifacts/generated/analysis_report.md",
+        "artifacts/generated/analysis_report.sha256",
+    )
 
 
 def test_execution_error_returns_nonzero_status(
