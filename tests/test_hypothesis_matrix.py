@@ -120,9 +120,7 @@ def test_verified_matrix_binds_all_hypotheses_to_the_claim_ledger() -> None:
     assert bound.matrix_id == "wow-signal-hypothesis-matrix-v1"
     assert bound.ledger_id == "wow-signal-evidence-claims-v1"
     assert len(bound.hypotheses) == 5
-    assert tuple(
-        hypothesis.record.hypothesis_id for hypothesis in bound.hypotheses
-    ) == (
+    assert tuple(hypothesis.record.hypothesis_id for hypothesis in bound.hypotheses) == (
         "gaussian-transit-shape",
         "stable-artificial-carrier-or-beacon",
         "natural-versus-artificial-origin",
@@ -134,19 +132,13 @@ def test_verified_matrix_binds_all_hypotheses_to_the_claim_ledger() -> None:
 def test_matrix_preserves_scope_and_status_counts() -> None:
     matrix = load_hypothesis_matrix(_MATRIX_PATH)
 
-    assert {
-        scope: len(matrix.hypotheses_by_scope(scope))
-        for scope in HypothesisScope
-    } == {
+    assert {scope: len(matrix.hypotheses_by_scope(scope)) for scope in HypothesisScope} == {
         HypothesisScope.SHAPE_MODEL: 1,
         HypothesisScope.SOURCE_FUNCTION: 1,
         HypothesisScope.SOURCE_ORIGIN: 2,
         HypothesisScope.SYMBOLIC_INTENT: 1,
     }
-    assert {
-        status: len(matrix.hypotheses_by_status(status))
-        for status in HypothesisStatus
-    } == {
+    assert {status: len(matrix.hypotheses_by_status(status)) for status in HypothesisStatus} == {
         HypothesisStatus.SUPPORTED_AS_MODEL: 1,
         HypothesisStatus.COMPATIBLE_NOT_PROVEN: 1,
         HypothesisStatus.NOT_DISCRIMINATED: 1,
@@ -172,9 +164,7 @@ def test_carrier_hypothesis_is_compatible_but_not_promoted_to_fact() -> None:
         _REPOSITORY_ROOT,
         claim_ledger=_claim_ledger(),
     )
-    hypothesis = bound.hypothesis_by_id(
-        "stable-artificial-carrier-or-beacon"
-    )
+    hypothesis = bound.hypothesis_by_id("stable-artificial-carrier-or-beacon")
 
     assert hypothesis.record.status is HypothesisStatus.COMPATIBLE_NOT_PROVEN
     assert hypothesis.classifications == (
@@ -192,9 +182,7 @@ def test_origin_discrimination_requires_all_evidence_classes() -> None:
         _REPOSITORY_ROOT,
         claim_ledger=_claim_ledger(),
     )
-    hypothesis = bound.hypothesis_by_id(
-        "natural-versus-artificial-origin"
-    )
+    hypothesis = bound.hypothesis_by_id("natural-versus-artificial-origin")
 
     assert hypothesis.record.status is HypothesisStatus.NOT_DISCRIMINATED
     assert set(hypothesis.classifications) == {
@@ -211,9 +199,7 @@ def test_morse_intent_and_extraterrestrial_origin_remain_unestablished() -> None
         claim_ledger=_claim_ledger(),
     )
     morse = bound.hypothesis_by_id("intentional-morse-question")
-    extraterrestrial = bound.hypothesis_by_id(
-        "extraterrestrial-technology-origin"
-    )
+    extraterrestrial = bound.hypothesis_by_id("extraterrestrial-technology-origin")
 
     assert morse.record.status is HypothesisStatus.NOT_ESTABLISHED
     assert extraterrestrial.record.status is HypothesisStatus.NOT_ESTABLISHED
@@ -256,10 +242,7 @@ def test_supported_model_cannot_depend_on_a_speculative_claim() -> None:
         limitations=("This record is intentionally invalid.",),
     )
     ledger = _claim_ledger()
-    claims = tuple(
-        ledger.claim_by_id(claim_id)
-        for claim_id in record.claim_ids
-    )
+    claims = tuple(ledger.claim_by_id(claim_id) for claim_id in record.claim_ids)
 
     with pytest.raises(
         HypothesisMatrixError,
@@ -317,9 +300,7 @@ def test_verified_loader_detects_matrix_tampering(tmp_path: Path) -> None:
     manifest_target.parent.mkdir(parents=True)
     matrix_target.parent.mkdir(parents=True)
 
-    manifest_target.write_bytes(
-        (_REPOSITORY_ROOT / HYPOTHESIS_MATRIX_MANIFEST_PATH).read_bytes()
-    )
+    manifest_target.write_bytes((_REPOSITORY_ROOT / HYPOTHESIS_MATRIX_MANIFEST_PATH).read_bytes())
     matrix_target.write_text(
         _MATRIX_PATH.read_text(encoding="utf-8") + "\n",
         encoding="utf-8",
@@ -341,9 +322,7 @@ def test_verified_loader_rejects_manifest_record_count_drift(
     matrix_target.parent.mkdir(parents=True)
 
     manifest_payload = json.loads(
-        (
-            _REPOSITORY_ROOT / HYPOTHESIS_MATRIX_MANIFEST_PATH
-        ).read_text(encoding="utf-8")
+        (_REPOSITORY_ROOT / HYPOTHESIS_MATRIX_MANIFEST_PATH).read_text(encoding="utf-8")
     )
     manifest_payload["artifacts"][0]["record_count"] = 4
     manifest_target.write_text(
