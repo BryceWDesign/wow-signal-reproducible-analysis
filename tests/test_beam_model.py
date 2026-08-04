@@ -40,15 +40,11 @@ def test_canonical_fit_exposes_predictions_residuals_and_goodness_of_fit() -> No
         0.9857,
         abs=0.0002,
     )
-    assert tuple(
-        sample.predicted_snr for sample in fit.samples
-    ) == pytest.approx(
+    assert tuple(sample.predicted_snr for sample in fit.samples) == pytest.approx(
         (4.69, 14.84, 27.47, 29.76, 18.88, 7.01),
         abs=0.03,
     )
-    assert tuple(
-        sample.residual_snr for sample in fit.samples
-    ) == pytest.approx(
+    assert tuple(sample.residual_snr for sample in fit.samples) == pytest.approx(
         (1.81, -0.34, -0.97, 0.74, 0.62, -1.51),
         abs=0.03,
     )
