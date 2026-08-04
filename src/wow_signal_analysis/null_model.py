@@ -30,9 +30,7 @@ class GlyphComparisonCount:
 
     def __post_init__(self) -> None:
         if len(self.glyph) != 1 or self.glyph.isspace():
-            raise NullModelError(
-                "glyph must contain exactly one non-whitespace character"
-            )
+            raise NullModelError("glyph must contain exactly one non-whitespace character")
         if self.comparison_count <= 0:
             raise NullModelError("comparison_count must be positive")
 
@@ -59,13 +57,8 @@ class PermutationOutcome:
         glyphs = tuple(item.glyph for item in self.glyph_counts)
         if len(set(glyphs)) != len(glyphs):
             raise NullModelError("glyph_counts must not contain duplicate glyphs")
-        if any(
-            item.comparison_count > self.total_comparisons
-            for item in self.glyph_counts
-        ):
-            raise NullModelError(
-                "glyph comparison_count cannot exceed total_comparisons"
-            )
+        if any(item.comparison_count > self.total_comparisons for item in self.glyph_counts):
+            raise NullModelError("glyph comparison_count cannot exceed total_comparisons")
 
     @property
     def matched_glyphs(self) -> tuple[str, ...]:
@@ -76,11 +69,7 @@ class PermutationOutcome:
     def comparison_count_for_glyph(self, glyph: str) -> int:
         """Return the comparison count for a glyph, or zero when unmatched."""
 
-        return sum(
-            item.comparison_count
-            for item in self.glyph_counts
-            if item.glyph == glyph
-        )
+        return sum(item.comparison_count for item in self.glyph_counts if item.glyph == glyph)
 
     def matches_glyph(self, glyph: str) -> bool:
         """Return whether at least one declared comparison matches the glyph."""
@@ -100,21 +89,15 @@ class GlyphNullSummary:
 
     def __post_init__(self) -> None:
         if len(self.glyph) != 1 or self.glyph.isspace():
-            raise NullModelError(
-                "glyph must contain exactly one non-whitespace character"
-            )
+            raise NullModelError("glyph must contain exactly one non-whitespace character")
         if self.total_sequence_count <= 0:
             raise NullModelError("total_sequence_count must be positive")
         if not 0 <= self.matched_sequence_count <= self.total_sequence_count:
-            raise NullModelError(
-                "matched_sequence_count must be within the sequence total"
-            )
+            raise NullModelError("matched_sequence_count must be within the sequence total")
         if self.total_comparison_count <= 0:
             raise NullModelError("total_comparison_count must be positive")
         if not 0 <= self.matched_comparison_count <= self.total_comparison_count:
-            raise NullModelError(
-                "matched_comparison_count must be within the comparison total"
-            )
+            raise NullModelError("matched_comparison_count must be within the comparison total")
 
     @property
     def sequence_fraction(self) -> Fraction:
@@ -162,24 +145,16 @@ class PermutationNullReport:
             raise NullModelError("outcomes must not be empty")
 
         expected_indices = tuple(range(len(self.outcomes)))
-        actual_indices = tuple(
-            outcome.permutation_index for outcome in self.outcomes
-        )
+        actual_indices = tuple(outcome.permutation_index for outcome in self.outcomes)
         if actual_indices != expected_indices:
-            raise NullModelError(
-                "outcome indices must be contiguous and zero-based"
-            )
+            raise NullModelError("outcome indices must be contiguous and zero-based")
 
         expected_multiset = Counter(self.original_values)
         for outcome in self.outcomes:
             if Counter(outcome.values) != expected_multiset:
-                raise NullModelError(
-                    "every outcome must preserve the original value multiset"
-                )
+                raise NullModelError("every outcome must preserve the original value multiset")
             if outcome.total_comparisons != self.comparisons_per_sequence:
-                raise NullModelError(
-                    "every outcome must use comparisons_per_sequence"
-                )
+                raise NullModelError("every outcome must use comparisons_per_sequence")
 
         if len({outcome.values for outcome in self.outcomes}) != len(self.outcomes):
             raise NullModelError("outcomes must contain unique permutations")
@@ -194,33 +169,23 @@ class PermutationNullReport:
             for outcome in self.outcomes
             for glyph in outcome.matched_glyphs
         ):
-            raise NullModelError(
-                "outcome glyphs must be declared by glyph_summaries"
-            )
+            raise NullModelError("outcome glyphs must be declared by glyph_summaries")
 
         for summary in self.glyph_summaries:
             if summary.total_sequence_count != self.total_unique_sequences:
-                raise NullModelError(
-                    "glyph summary sequence totals must match the report"
-                )
+                raise NullModelError("glyph summary sequence totals must match the report")
             if summary.total_comparison_count != self.total_comparison_count:
-                raise NullModelError(
-                    "glyph summary comparison totals must match the report"
-                )
+                raise NullModelError("glyph summary comparison totals must match the report")
 
             expected_sequence_count = sum(
-                outcome.matches_glyph(summary.glyph)
-                for outcome in self.outcomes
+                outcome.matches_glyph(summary.glyph) for outcome in self.outcomes
             )
             expected_comparison_count = sum(
-                outcome.comparison_count_for_glyph(summary.glyph)
-                for outcome in self.outcomes
+                outcome.comparison_count_for_glyph(summary.glyph) for outcome in self.outcomes
             )
 
             if summary.matched_sequence_count != expected_sequence_count:
-                raise NullModelError(
-                    "glyph summary matched_sequence_count does not match outcomes"
-                )
+                raise NullModelError("glyph summary matched_sequence_count does not match outcomes")
             if summary.matched_comparison_count != expected_comparison_count:
                 raise NullModelError(
                     "glyph summary matched_comparison_count does not match outcomes"
@@ -241,13 +206,10 @@ class PermutationNullReport:
     def summary_for_glyph(self, glyph: str) -> GlyphNullSummary:
         """Return the unique null summary for one selected glyph."""
 
-        matches = tuple(
-            summary for summary in self.glyph_summaries if summary.glyph == glyph
-        )
+        matches = tuple(summary for summary in self.glyph_summaries if summary.glyph == glyph)
         if len(matches) != 1:
             raise NullModelError(
-                f"expected one null summary for glyph {glyph!r}, "
-                f"found {len(matches)}"
+                f"expected one null summary for glyph {glyph!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -258,13 +220,10 @@ class PermutationNullReport:
         """Return the unique evaluated outcome for an exact temporal ordering."""
 
         normalized = tuple(values)
-        matches = tuple(
-            outcome for outcome in self.outcomes if outcome.values == normalized
-        )
+        matches = tuple(outcome for outcome in self.outcomes if outcome.values == normalized)
         if len(matches) != 1:
             raise NullModelError(
-                "expected one outcome for the requested value ordering, "
-                f"found {len(matches)}"
+                f"expected one outcome for the requested value ordering, found {len(matches)}"
             )
         return matches[0]
 
@@ -273,8 +232,7 @@ class PermutationNullReport:
 
         selected = self._require_selected_glyphs(glyphs)
         return sum(
-            any(outcome.matches_glyph(glyph) for glyph in selected)
-            for outcome in self.outcomes
+            any(outcome.matches_glyph(glyph) for glyph in selected) for outcome in self.outcomes
         )
 
     def sequence_fraction_matching_any(self, glyphs: Sequence[str]) -> Fraction:
@@ -299,7 +257,9 @@ class PermutationNullReport:
                 f"glyph family contains symbols absent from this report: {unknown}"
             )
         return selected
-      def analyze_permutation_null(
+
+
+def analyze_permutation_null(
     values: Sequence[Decimal],
     registry: MorseRegistry,
     *,
@@ -339,9 +299,7 @@ class PermutationNullReport:
     outcomes: list[PermutationOutcome] = []
     comparisons_per_sequence: int | None = None
 
-    for permutation_index, permutation in enumerate(
-        iter_unique_permutations(normalized)
-    ):
+    for permutation_index, permutation in enumerate(iter_unique_permutations(normalized)):
         correspondence = analyze_threshold_morse(permutation, registry)
         searched_comparisons = tuple(
             comparison
@@ -360,10 +318,7 @@ class PermutationNullReport:
 
         glyph_counts: list[GlyphComparisonCount] = []
         for glyph in selected_glyphs:
-            count = sum(
-                glyph in comparison.matched_glyphs
-                for comparison in searched_comparisons
-            )
+            count = sum(glyph in comparison.matched_glyphs for comparison in searched_comparisons)
             if count > 0:
                 glyph_counts.append(
                     GlyphComparisonCount(
@@ -466,9 +421,7 @@ def _normalize_glyphs(
     glyphs: Sequence[str] | None,
 ) -> tuple[str, ...]:
     selected = (
-        tuple(symbol.glyph for symbol in registry.symbols)
-        if glyphs is None
-        else tuple(glyphs)
+        tuple(symbol.glyph for symbol in registry.symbols) if glyphs is None else tuple(glyphs)
     )
     if not selected:
         raise NullModelError("at least one Morse glyph must be selected")
@@ -495,9 +448,7 @@ def _normalize_directions(
     if len(set(selected)) != len(selected):
         raise NullModelError("selected sequence directions must be unique")
     if any(not isinstance(direction, SequenceDirection) for direction in selected):
-        raise NullModelError(
-            "selected sequence directions must be SequenceDirection values"
-        )
+        raise NullModelError("selected sequence directions must be SequenceDirection values")
     return selected
 
 
@@ -510,7 +461,5 @@ def _normalize_polarities(
     if len(set(selected)) != len(selected):
         raise NullModelError("selected Morse polarities must be unique")
     if any(not isinstance(polarity, MorsePolarity) for polarity in selected):
-        raise NullModelError(
-            "selected Morse polarities must be MorsePolarity values"
-        )
+        raise NullModelError("selected Morse polarities must be MorsePolarity values")
     return selected
