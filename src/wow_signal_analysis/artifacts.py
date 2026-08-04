@@ -24,34 +24,18 @@ from wow_signal_analysis.visualization import (
 
 ANALYSIS_ARTIFACT_BUNDLE_ID: Final = "wow-signal-analysis-artifacts-v1"
 ANALYSIS_ARTIFACT_DIRECTORY: Final = PurePosixPath("artifacts/generated")
-ANALYSIS_SNAPSHOT_ARTIFACT_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_snapshot.json"
-)
-ANALYSIS_SNAPSHOT_CHECKSUM_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_snapshot.sha256"
-)
-ANALYSIS_REPORT_ARTIFACT_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.md"
-)
-ANALYSIS_REPORT_CHECKSUM_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.sha256"
-)
-ANALYSIS_BEAM_FIT_FIGURE_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.svg"
-)
-ANALYSIS_BEAM_FIT_CHECKSUM_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.sha256"
-)
-ANALYSIS_MODEL_COMPARISON_FIGURE_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.svg"
-)
+ANALYSIS_SNAPSHOT_ARTIFACT_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "analysis_snapshot.json"
+ANALYSIS_SNAPSHOT_CHECKSUM_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "analysis_snapshot.sha256"
+ANALYSIS_REPORT_ARTIFACT_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.md"
+ANALYSIS_REPORT_CHECKSUM_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "analysis_report.sha256"
+ANALYSIS_BEAM_FIT_FIGURE_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.svg"
+ANALYSIS_BEAM_FIT_CHECKSUM_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "beam_fit.sha256"
+ANALYSIS_MODEL_COMPARISON_FIGURE_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.svg"
 ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH: Final = (
     ANALYSIS_ARTIFACT_DIRECTORY / "model_comparison.sha256"
 )
 ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION: Final = 1
-ANALYSIS_BUNDLE_MANIFEST_PATH: Final = (
-    ANALYSIS_ARTIFACT_DIRECTORY / "artifact_manifest.json"
-)
+ANALYSIS_BUNDLE_MANIFEST_PATH: Final = ANALYSIS_ARTIFACT_DIRECTORY / "artifact_manifest.json"
 ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH: Final = (
     ANALYSIS_ARTIFACT_DIRECTORY / "artifact_manifest.sha256"
 )
@@ -90,9 +74,7 @@ class GeneratedArtifact:
             raise ArtifactGenerationError("media_type must be non-empty")
 
         if not isinstance(self.content, bytes) or not self.content:
-            raise ArtifactGenerationError(
-                "generated artifact content must be non-empty bytes"
-            )
+            raise ArtifactGenerationError("generated artifact content must be non-empty bytes")
 
     @property
     def byte_count(self) -> int:
@@ -125,28 +107,18 @@ class BundleManifestEntry:
             or not normalized_path.parts
             or ".." in normalized_path.parts
         ):
-            raise ArtifactGenerationError(
-                "manifest relative_path must be repository-relative"
-            )
+            raise ArtifactGenerationError("manifest relative_path must be repository-relative")
         if normalized_path in {
             ANALYSIS_BUNDLE_MANIFEST_PATH,
             ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
         }:
-            raise ArtifactGenerationError(
-                "manifest entries must not include the manifest itself"
-            )
+            raise ArtifactGenerationError("manifest entries must not include the manifest itself")
         if not self.media_type.strip():
-            raise ArtifactGenerationError(
-                "manifest media_type must be non-empty"
-            )
+            raise ArtifactGenerationError("manifest media_type must be non-empty")
         if self.byte_count <= 0:
-            raise ArtifactGenerationError(
-                "manifest byte_count must be positive"
-            )
+            raise ArtifactGenerationError("manifest byte_count must be positive")
         if not _SHA256_PATTERN.fullmatch(self.sha256_hex):
-            raise ArtifactGenerationError(
-                "manifest sha256_hex must be a lowercase SHA-256 digest"
-            )
+            raise ArtifactGenerationError("manifest sha256_hex must be a lowercase SHA-256 digest")
 
     @classmethod
     def from_artifact(
@@ -184,27 +156,17 @@ class AnalysisBundleManifest:
 
     def __post_init__(self) -> None:
         if self.schema_version != ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION:
-            raise ArtifactGenerationError(
-                "unsupported analysis bundle manifest schema_version"
-            )
+            raise ArtifactGenerationError("unsupported analysis bundle manifest schema_version")
         if self.bundle_id != ANALYSIS_ARTIFACT_BUNDLE_ID:
-            raise ArtifactGenerationError(
-                f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}"
-            )
+            raise ArtifactGenerationError(f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise ArtifactGenerationError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise ArtifactGenerationError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if not self.artifacts:
-            raise ArtifactGenerationError(
-                "analysis bundle manifest must contain artifacts"
-            )
+            raise ArtifactGenerationError("analysis bundle manifest must contain artifacts")
 
         paths = tuple(entry.relative_path for entry in self.artifacts)
         if len(set(paths)) != len(paths):
-            raise ArtifactGenerationError(
-                "analysis bundle manifest paths must be unique"
-            )
+            raise ArtifactGenerationError("analysis bundle manifest paths must be unique")
 
     @classmethod
     def from_artifacts(
@@ -217,10 +179,7 @@ class AnalysisBundleManifest:
             schema_version=ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION,
             bundle_id=ANALYSIS_ARTIFACT_BUNDLE_ID,
             analysis_id=ANALYSIS_SNAPSHOT_ID,
-            artifacts=tuple(
-                BundleManifestEntry.from_artifact(artifact)
-                for artifact in artifacts
-            ),
+            artifacts=tuple(BundleManifestEntry.from_artifact(artifact) for artifact in artifacts),
         )
 
     @property
@@ -244,9 +203,7 @@ class AnalysisBundleManifest:
             "analysis_id": self.analysis_id,
             "artifact_count": self.artifact_count,
             "total_byte_count": self.total_byte_count,
-            "artifacts": [
-                entry.to_mapping() for entry in self.artifacts
-            ],
+            "artifacts": [entry.to_mapping() for entry in self.artifacts],
         }
 
     def to_json(self) -> str:
@@ -286,13 +243,9 @@ class AnalysisArtifactBundle:
                 "bundle_id must be a lowercase hyphen-delimited identifier"
             )
         if self.bundle_id != ANALYSIS_ARTIFACT_BUNDLE_ID:
-            raise ArtifactGenerationError(
-                f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}"
-            )
+            raise ArtifactGenerationError(f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise ArtifactGenerationError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise ArtifactGenerationError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
 
         self._validate_snapshot_artifacts()
         self._validate_report_artifacts()
@@ -350,9 +303,7 @@ class AnalysisArtifactBundle:
 
         normalized = PurePosixPath(relative_path)
         matches = tuple(
-            artifact
-            for artifact in self.artifacts
-            if artifact.relative_path == normalized
+            artifact for artifact in self.artifacts if artifact.relative_path == normalized
         )
         if len(matches) != 1:
             raise ArtifactGenerationError(
@@ -385,9 +336,7 @@ class AnalysisArtifactBundle:
         try:
             report_text = self.report.content.decode("utf-8")
         except UnicodeDecodeError as error:
-            raise ArtifactGenerationError(
-                "report artifact must contain valid UTF-8"
-            ) from error
+            raise ArtifactGenerationError("report artifact must contain valid UTF-8") from error
 
         if not report_text.startswith("# "):
             raise ArtifactGenerationError(
@@ -398,9 +347,7 @@ class AnalysisArtifactBundle:
                 "report artifact must end with exactly one line terminator"
             )
         if "\r" in report_text:
-            raise ArtifactGenerationError(
-                "report artifact must use LF line endings"
-            )
+            raise ArtifactGenerationError("report artifact must use LF line endings")
 
         _validate_checksum_artifact(
             self.report_checksum,
@@ -444,9 +391,7 @@ class AnalysisArtifactBundle:
         )
         expected_content = self.manifest_model.to_json().encode("utf-8")
         if self.manifest.content != expected_content:
-            raise ArtifactGenerationError(
-                "bundle manifest does not match the payload artifacts"
-            )
+            raise ArtifactGenerationError("bundle manifest does not match the payload artifacts")
         _validate_checksum_artifact(
             self.manifest_checksum,
             source=self.manifest,
@@ -474,25 +419,15 @@ class ArtifactWriteResult:
             or not normalized_path.parts
             or ".." in normalized_path.parts
         ):
-            raise ArtifactGenerationError(
-                "result relative_path must be repository-relative"
-            )
+            raise ArtifactGenerationError("result relative_path must be repository-relative")
         if not self.absolute_path.is_absolute():
-            raise ArtifactGenerationError(
-                "result absolute_path must be absolute"
-            )
+            raise ArtifactGenerationError("result absolute_path must be absolute")
         if not self.media_type.strip():
-            raise ArtifactGenerationError(
-                "result media_type must be non-empty"
-            )
+            raise ArtifactGenerationError("result media_type must be non-empty")
         if self.byte_count <= 0:
-            raise ArtifactGenerationError(
-                "result byte_count must be positive"
-            )
+            raise ArtifactGenerationError("result byte_count must be positive")
         if not _SHA256_PATTERN.fullmatch(self.sha256_hex):
-            raise ArtifactGenerationError(
-                "result sha256_hex must be a lowercase SHA-256 digest"
-            )
+            raise ArtifactGenerationError("result sha256_hex must be a lowercase SHA-256 digest")
 
 
 def build_analysis_artifact_bundle(
@@ -501,9 +436,7 @@ def build_analysis_artifact_bundle(
     """Serialize the snapshot, report, figures, manifest, and checksums."""
 
     if not isinstance(snapshot, AnalysisSnapshot):
-        raise ArtifactGenerationError(
-            "snapshot must be an AnalysisSnapshot"
-        )
+        raise ArtifactGenerationError("snapshot must be an AnalysisSnapshot")
 
     rendered_report = build_analysis_report(snapshot)
     figures = build_analysis_figures(snapshot)
@@ -551,9 +484,7 @@ def build_analysis_artifact_bundle(
             ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
         ),
     )
-    manifest_model = AnalysisBundleManifest.from_artifacts(
-        payload_artifacts
-    )
+    manifest_model = AnalysisBundleManifest.from_artifacts(payload_artifacts)
     manifest_artifact = GeneratedArtifact(
         relative_path=ANALYSIS_BUNDLE_MANIFEST_PATH,
         media_type="application/json",
@@ -588,9 +519,7 @@ def write_analysis_artifact_bundle(
     """Atomically replace each generated artifact and verify its final bytes."""
 
     if not isinstance(bundle, AnalysisArtifactBundle):
-        raise ArtifactGenerationError(
-            "bundle must be an AnalysisArtifactBundle"
-        )
+        raise ArtifactGenerationError("bundle must be an AnalysisArtifactBundle")
     if not isinstance(overwrite, bool):
         raise ArtifactGenerationError("overwrite must be a boolean")
 
@@ -623,9 +552,7 @@ def verify_written_analysis_artifacts(
     """Verify that written artifacts exactly match their in-memory bundle."""
 
     if not isinstance(bundle, AnalysisArtifactBundle):
-        raise ArtifactGenerationError(
-            "bundle must be an AnalysisArtifactBundle"
-        )
+        raise ArtifactGenerationError("bundle must be an AnalysisArtifactBundle")
 
     root = _require_repository_root(repository_root)
     results: list[ArtifactWriteResult] = []
@@ -639,8 +566,7 @@ def verify_written_analysis_artifacts(
 
         if destination.is_symlink():
             raise ArtifactGenerationError(
-                f"generated artifact must not be a symbolic link: "
-                f"{artifact.relative_path}"
+                f"generated artifact must not be a symbolic link: {artifact.relative_path}"
             )
         if not destination.is_file():
             raise ArtifactGenerationError(
@@ -675,13 +601,9 @@ def _validate_primary_artifact(
     label: str,
 ) -> None:
     if artifact.relative_path != expected_path:
-        raise ArtifactGenerationError(
-            f"{label} path does not match the canonical path"
-        )
+        raise ArtifactGenerationError(f"{label} path does not match the canonical path")
     if artifact.media_type != expected_media_type:
-        raise ArtifactGenerationError(
-            f"{label} media_type must be {expected_media_type}"
-        )
+        raise ArtifactGenerationError(f"{label} media_type must be {expected_media_type}")
 
 
 def _validate_checksum_artifact(
@@ -698,9 +620,7 @@ def _validate_checksum_artifact(
         label=label,
     )
     if checksum.content != _checksum_content(source):
-        raise ArtifactGenerationError(
-            f"{label} does not match the source digest"
-        )
+        raise ArtifactGenerationError(f"{label} does not match the source digest")
 
 
 def _validate_svg_artifact(
@@ -720,34 +640,20 @@ def _validate_svg_artifact(
     try:
         svg = artifact.content.decode("utf-8")
     except UnicodeDecodeError as error:
-        raise ArtifactGenerationError(
-            f"{label} must contain valid UTF-8"
-        ) from error
+        raise ArtifactGenerationError(f"{label} must contain valid UTF-8") from error
 
     if not svg.startswith('<svg xmlns="http://www.w3.org/2000/svg"'):
-        raise ArtifactGenerationError(
-            f"{label} must begin with the canonical SVG root"
-        )
+        raise ArtifactGenerationError(f"{label} must begin with the canonical SVG root")
     if not svg.endswith("</svg>\n") or svg.endswith("</svg>\n\n"):
-        raise ArtifactGenerationError(
-            f"{label} must end with exactly one line terminator"
-        )
+        raise ArtifactGenerationError(f"{label} must end with exactly one line terminator")
     if "\r" in svg:
-        raise ArtifactGenerationError(
-            f"{label} must use LF line endings"
-        )
+        raise ArtifactGenerationError(f"{label} must use LF line endings")
     if "<script" in svg.lower():
-        raise ArtifactGenerationError(
-            f"{label} must not contain executable scripts"
-        )
+        raise ArtifactGenerationError(f"{label} must not contain executable scripts")
     if " href=" in svg.lower() or "xlink:href" in svg.lower():
-        raise ArtifactGenerationError(
-            f"{label} must not reference external resources"
-        )
+        raise ArtifactGenerationError(f"{label} must not reference external resources")
     if f'id="{expected_figure_id}-title"' not in svg:
-        raise ArtifactGenerationError(
-            f"{label} does not contain its canonical accessible title ID"
-        )
+        raise ArtifactGenerationError(f"{label} does not contain its canonical accessible title ID")
     if f'id="{expected_figure_id}-description"' not in svg:
         raise ArtifactGenerationError(
             f"{label} does not contain its canonical accessible description ID"
@@ -774,9 +680,7 @@ def _require_repository_root(repository_root: Path) -> Path:
     root = repository_root.resolve()
 
     if not root.is_dir():
-        raise ArtifactGenerationError(
-            f"repository_root must be an existing directory: {root}"
-        )
+        raise ArtifactGenerationError(f"repository_root must be an existing directory: {root}")
 
     return root
 
@@ -809,9 +713,7 @@ def _destination_for(
         ) from error
 
     if not resolved_parent.is_relative_to(root):
-        raise ArtifactGenerationError(
-            f"artifact path escapes repository_root: {relative_path}"
-        )
+        raise ArtifactGenerationError(f"artifact path escapes repository_root: {relative_path}")
 
     return resolved_parent / relative_path.name
 
@@ -863,13 +765,11 @@ def _result_for_written_artifact(
     actual_digest = sha256(actual_content).hexdigest()
     if actual_content != artifact.content:
         raise ArtifactGenerationError(
-            f"written artifact differs from expected content: "
-            f"{artifact.relative_path}"
+            f"written artifact differs from expected content: {artifact.relative_path}"
         )
     if actual_digest != artifact.sha256_hex:
         raise ArtifactGenerationError(
-            f"written artifact digest differs from expected digest: "
-            f"{artifact.relative_path}"
+            f"written artifact digest differs from expected digest: {artifact.relative_path}"
         )
 
     return ArtifactWriteResult(
