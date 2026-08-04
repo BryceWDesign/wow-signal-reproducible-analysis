@@ -17,6 +17,10 @@ Do not present a model fit, threshold pattern, Morse correspondence, or frequenc
 association as proof of transmitter intent, decoded language, artificial origin, or
 extraterrestrial origin.
 
+Compatibility results must never be presented as recovered transmitter intent.
+Receiver-strength bins must not be described as transmitted text.
+Single-event patterns must not be generalized into source-origin or intent claims.
+
 The `6EQUJ5` characters are receiver-strength codes, not transmitted letters.
 
 ## Development
@@ -24,11 +28,11 @@ The `6EQUJ5` characters are receiver-strength codes, not transmitted letters.
 Use Python 3.11, 3.12, or 3.13.
 
 Run:
-```
+
     python -m pip install --upgrade pip
     python -m pip install -e ".[dev]"
     python check_green.py
-```
+
 Do not report the repository as green unless the complete quality gate passes.
 
 ## Data and provenance
@@ -36,10 +40,10 @@ Do not report the repository as green unless the complete quality gate passes.
 Changes under `data/raw/` or `data/reference/` must:
 
 - Update the matching manifest under `data/provenance/`.
-- Recalculate the SHA-256 digest from the final bytes.
+- Recalculate the exact SHA-256 digest from the final bytes.
 - Update record counts when needed.
 - Preserve separate sources and estimates.
-- Include tamper-detection tests.
+- Add or update tamper-detection tests.
 
 Never silently replace a historical value with a newer estimate.
 
@@ -60,24 +64,24 @@ reported.
 ## Generated artifacts
 
 Generate and verify the artifact bundle with:
-```
+
     python -m wow_signal_analysis generate --root .
     python -m wow_signal_analysis generate --root . --check
     python -m wow_signal_analysis audit --root .
-```
+
 Do not hand-edit files under `artifacts/generated/`.
 
 ## Required validation
 
 Before submitting a contribution, run:
-```
+
     python check_green.py
-```
+
 The gate checks Ruff, formatting, mypy, pytest, package builds, the repository
 contract, and isolated release reproduction.
 
-When a check cannot be run, state exactly what was and was not executed. A partial
-test run or visual inspection is not a cumulative green result.
+When a check cannot be run, state exactly what was and was not executed. Never substitute
+a visual inspection or a partial test run for the cumulative quality gate result.
 
 ## Pull requests
 
