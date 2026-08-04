@@ -62,65 +62,39 @@ class ReleaseVerificationReport:
 
     def __post_init__(self) -> None:
         if self.verification_id != RELEASE_VERIFICATION_ID:
-            raise ReleaseVerificationError(
-                f"verification_id must be {RELEASE_VERIFICATION_ID!r}"
-            )
+            raise ReleaseVerificationError(f"verification_id must be {RELEASE_VERIFICATION_ID!r}")
         if not self.repository_root.is_absolute():
-            raise ReleaseVerificationError(
-                "repository_root must be absolute"
-            )
+            raise ReleaseVerificationError("repository_root must be absolute")
         if self.bundle_id != ANALYSIS_ARTIFACT_BUNDLE_ID:
-            raise ReleaseVerificationError(
-                f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}"
-            )
+            raise ReleaseVerificationError(f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise ReleaseVerificationError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise ReleaseVerificationError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if self.audit_id != ARTIFACT_AUDIT_ID:
-            raise ReleaseVerificationError(
-                f"audit_id must be {ARTIFACT_AUDIT_ID!r}"
-            )
+            raise ReleaseVerificationError(f"audit_id must be {ARTIFACT_AUDIT_ID!r}")
         if self.deterministic_rebuild_count != RELEASE_REBUILD_COUNT:
             raise ReleaseVerificationError(
                 "deterministic_rebuild_count does not match the release contract"
             )
         if self.contract_component_count <= 0:
-            raise ReleaseVerificationError(
-                "contract_component_count must be positive"
-            )
+            raise ReleaseVerificationError("contract_component_count must be positive")
         if self.contract_record_count <= 0:
-            raise ReleaseVerificationError(
-                "contract_record_count must be positive"
-            )
+            raise ReleaseVerificationError("contract_record_count must be positive")
         if self.artifact_count <= 0:
-            raise ReleaseVerificationError(
-                "artifact_count must be positive"
-            )
+            raise ReleaseVerificationError("artifact_count must be positive")
         if self.payload_artifact_count <= 0:
-            raise ReleaseVerificationError(
-                "payload_artifact_count must be positive"
-            )
+            raise ReleaseVerificationError("payload_artifact_count must be positive")
         if self.payload_artifact_count >= self.artifact_count:
             raise ReleaseVerificationError(
                 "artifact_count must include manifest artifacts beyond the payload"
             )
         if self.total_bundle_byte_count <= 0:
-            raise ReleaseVerificationError(
-                "total_bundle_byte_count must be positive"
-            )
+            raise ReleaseVerificationError("total_bundle_byte_count must be positive")
         if self.payload_byte_count <= 0:
-            raise ReleaseVerificationError(
-                "payload_byte_count must be positive"
-            )
+            raise ReleaseVerificationError("payload_byte_count must be positive")
         if self.payload_byte_count >= self.total_bundle_byte_count:
-            raise ReleaseVerificationError(
-                "total bundle bytes must exceed payload bytes"
-            )
+            raise ReleaseVerificationError("total bundle bytes must exceed payload bytes")
         if not _SHA256_PATTERN.fullmatch(self.manifest_sha256_hex):
-            raise ReleaseVerificationError(
-                "manifest_sha256_hex must be a lowercase SHA-256 digest"
-            )
+            raise ReleaseVerificationError("manifest_sha256_hex must be a lowercase SHA-256 digest")
 
     def to_mapping(self) -> dict[str, object]:
         """Return a deterministic JSON-compatible verification result."""
@@ -133,9 +107,7 @@ class ReleaseVerificationReport:
                 "record_count": self.contract_record_count,
             },
             "reproduction": {
-                "deterministic_rebuild_count": (
-                    self.deterministic_rebuild_count
-                ),
+                "deterministic_rebuild_count": (self.deterministic_rebuild_count),
                 "bundle_id": self.bundle_id,
                 "analysis_id": self.analysis_id,
                 "artifact_count": self.artifact_count,
@@ -175,24 +147,12 @@ class ReleaseVerificationReport:
                     f"{self.contract_component_count} components, "
                     f"{self.contract_record_count} records"
                 ),
-                (
-                    "Deterministic rebuilds: "
-                    f"{self.deterministic_rebuild_count}"
-                ),
+                (f"Deterministic rebuilds: {self.deterministic_rebuild_count}"),
                 f"Bundle: {self.bundle_id}",
                 f"Analysis: {self.analysis_id}",
-                (
-                    f"Artifacts: {self.artifact_count} total, "
-                    f"{self.payload_artifact_count} payload"
-                ),
-                (
-                    f"Bytes: {self.total_bundle_byte_count} total, "
-                    f"{self.payload_byte_count} payload"
-                ),
-                (
-                    "Manifest: "
-                    f"sha256:{self.manifest_sha256_hex}"
-                ),
+                (f"Artifacts: {self.artifact_count} total, {self.payload_artifact_count} payload"),
+                (f"Bytes: {self.total_bundle_byte_count} total, {self.payload_byte_count} payload"),
+                (f"Manifest: sha256:{self.manifest_sha256_hex}"),
                 f"Independent audit: {self.audit_id}",
                 "",
             )
@@ -248,14 +208,10 @@ def verify_release_reproduction(
     )
 
     if written != verified:
-        raise ReleaseVerificationError(
-            "written and independently re-read artifact results differ"
-        )
+        raise ReleaseVerificationError("written and independently re-read artifact results differ")
 
     if len(written) != len(first_bundle.artifacts):
-        raise ReleaseVerificationError(
-            "written artifact count does not match the bundle"
-        )
+        raise ReleaseVerificationError("written artifact count does not match the bundle")
 
     audit = audit_generated_artifacts(
         isolated_root,
@@ -263,28 +219,19 @@ def verify_release_reproduction(
     )
 
     if audit.artifact_count != len(first_bundle.payload_artifacts):
-        raise ReleaseVerificationError(
-            "independent audit payload count does not match the bundle"
-        )
+        raise ReleaseVerificationError("independent audit payload count does not match the bundle")
     if audit.total_byte_count != sum(
-        artifact.byte_count
-        for artifact in first_bundle.payload_artifacts
+        artifact.byte_count for artifact in first_bundle.payload_artifacts
     ):
-        raise ReleaseVerificationError(
-            "independent audit payload bytes do not match the bundle"
-        )
+        raise ReleaseVerificationError("independent audit payload bytes do not match the bundle")
     if audit.manifest_sha256_hex != first_bundle.manifest.sha256_hex:
         raise ReleaseVerificationError(
             "independent audit manifest digest does not match the bundle"
         )
     if audit.bundle_id != first_bundle.bundle_id:
-        raise ReleaseVerificationError(
-            "independent audit bundle identity does not match"
-        )
+        raise ReleaseVerificationError("independent audit bundle identity does not match")
     if audit.analysis_id != first_bundle.analysis_id:
-        raise ReleaseVerificationError(
-            "independent audit analysis identity does not match"
-        )
+        raise ReleaseVerificationError("independent audit analysis identity does not match")
 
     return ReleaseVerificationReport(
         verification_id=RELEASE_VERIFICATION_ID,
@@ -330,17 +277,13 @@ def main(
         action="store_true",
         help="Emit deterministic JSON instead of human-readable text.",
     )
-    arguments = parser.parse_args(
-        None if argv is None else list(argv)
-    )
+    arguments = parser.parse_args(None if argv is None else list(argv))
 
     output_stream = stdout or sys.stdout
     error_stream = stderr or sys.stderr
 
     try:
-        with TemporaryDirectory(
-            prefix="wow-signal-release-verification-"
-        ) as temporary_directory:
+        with TemporaryDirectory(prefix="wow-signal-release-verification-") as temporary_directory:
             report = verify_release_reproduction(
                 arguments.root,
                 Path(temporary_directory),
@@ -368,9 +311,7 @@ def _require_directory(
     resolved = path.resolve()
 
     if not resolved.is_dir():
-        raise ReleaseVerificationError(
-            f"{label} must be an existing directory: {resolved}"
-        )
+        raise ReleaseVerificationError(f"{label} must be an existing directory: {resolved}")
 
     return resolved
 
@@ -379,14 +320,10 @@ def _require_empty_directory(path: Path) -> None:
     try:
         has_entries = next(path.iterdir(), None) is not None
     except OSError as error:
-        raise ReleaseVerificationError(
-            f"unable to inspect output_root: {path}"
-        ) from error
+        raise ReleaseVerificationError(f"unable to inspect output_root: {path}") from error
 
     if has_entries:
-        raise ReleaseVerificationError(
-            "output_root must be empty before release verification"
-        )
+        raise ReleaseVerificationError("output_root must be empty before release verification")
 
 
 def _require_identical_bundles(
@@ -394,21 +331,15 @@ def _require_identical_bundles(
     second: AnalysisArtifactBundle,
 ) -> None:
     if first.bundle_id != second.bundle_id:
-        raise ReleaseVerificationError(
-            "deterministic rebuild changed the bundle identity"
-        )
+        raise ReleaseVerificationError("deterministic rebuild changed the bundle identity")
     if first.analysis_id != second.analysis_id:
-        raise ReleaseVerificationError(
-            "deterministic rebuild changed the analysis identity"
-        )
+        raise ReleaseVerificationError("deterministic rebuild changed the analysis identity")
 
     first_signature = _bundle_signature(first)
     second_signature = _bundle_signature(second)
 
     if first_signature != second_signature:
-        raise ReleaseVerificationError(
-            "deterministic rebuild produced different artifact bytes"
-        )
+        raise ReleaseVerificationError("deterministic rebuild produced different artifact bytes")
 
 
 def _bundle_signature(
