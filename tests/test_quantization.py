@@ -36,12 +36,7 @@ def test_analysis_evaluates_every_quantization_corner(
     assert report.evaluated_corner_count == 64
     assert report.corners[0].mask_pattern == "000000"
     assert report.corners[-1].mask_pattern == "111111"
-    assert len(
-        {
-            corner.mask_pattern
-            for corner in report.corners
-        }
-    ) == 64
+    assert len({corner.mask_pattern for corner in report.corners}) == 64
 
 
 def test_midpoint_fit_remains_the_canonical_beam_fit(
@@ -68,10 +63,7 @@ def test_corner_patterns_select_lower_bounds_or_upper_suprema_exactly(
         Decimal("19"),
         Decimal("5"),
     )
-    assert tuple(
-        sample.observed_snr
-        for sample in selected.fit.samples
-    ) == selected.observed_snr
+    assert tuple(sample.observed_snr for sample in selected.fit.samples) == selected.observed_snr
 
 
 def test_corner_envelopes_are_stable(
@@ -81,9 +73,7 @@ def test_corner_envelopes_are_stable(
     center = report.envelope(FitMetric.CENTER_SECONDS)
     sigma = report.envelope(FitMetric.SIGMA_SECONDS)
     fwhm = report.envelope(FitMetric.FWHM_SECONDS)
-    r_squared = report.envelope(
-        FitMetric.COEFFICIENT_OF_DETERMINATION
-    )
+    r_squared = report.envelope(FitMetric.COEFFICIENT_OF_DETERMINATION)
 
     assert amplitude.minimum == pytest.approx(
         29.9980,
@@ -138,9 +128,7 @@ def test_error_envelopes_identify_their_extreme_corners(
     report: QuantizationSensitivityReport,
 ) -> None:
     sse = report.envelope(FitMetric.SUM_SQUARED_ERROR)
-    rmse = report.envelope(
-        FitMetric.ROOT_MEAN_SQUARED_ERROR
-    )
+    rmse = report.envelope(FitMetric.ROOT_MEAN_SQUARED_ERROR)
 
     assert sse.minimum_corner_pattern == "011001"
     assert sse.maximum_corner_pattern == "100110"
