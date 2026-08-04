@@ -17,12 +17,8 @@ from wow_signal_analysis.provenance import (
 )
 
 MORSE_STANDARD_ID: Final = "ITU-R M.1677-1"
-MORSE_REFERENCE_PATH: Final = PurePosixPath(
-    "data/reference/itu_m1677_1_morse_symbols.json"
-)
-MORSE_MANIFEST_PATH: Final = PurePosixPath(
-    "data/provenance/morse_source_manifest.json"
-)
+MORSE_REFERENCE_PATH: Final = PurePosixPath("data/reference/itu_m1677_1_morse_symbols.json")
+MORSE_MANIFEST_PATH: Final = PurePosixPath("data/provenance/morse_source_manifest.json")
 
 _VALID_PATTERN_CHARACTERS: Final = frozenset({".", "-"})
 
@@ -73,11 +69,7 @@ class MorseRegistry:
     def __post_init__(self) -> None:
         if self.schema_version != 1:
             raise MorseError("unsupported Morse registry schema_version")
-        if (
-            not self.standard_id.strip()
-            or not self.title.strip()
-            or not self.scope_note.strip()
-        ):
+        if not self.standard_id.strip() or not self.title.strip() or not self.scope_note.strip():
             raise MorseError("standard_id, title, and scope_note must be non-empty")
         parsed_url = urlparse(self.source_url)
         if parsed_url.scheme != "https" or not parsed_url.netloc:
@@ -95,8 +87,7 @@ class MorseRegistry:
         matches = tuple(symbol for symbol in self.symbols if symbol.glyph == glyph)
         if len(matches) != 1:
             raise MorseError(
-                f"expected exactly one Morse symbol for glyph {glyph!r}, "
-                f"found {len(matches)}"
+                f"expected exactly one Morse symbol for glyph {glyph!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -125,8 +116,7 @@ def load_morse_registry(path: Path) -> MorseRegistry:
     root = _require_mapping(payload, "registry")
     symbol_values = _required_list(root, "symbols")
     symbols = tuple(
-        _symbol_from_mapping(_require_mapping(item, "symbol"))
-        for item in symbol_values
+        _symbol_from_mapping(_require_mapping(item, "symbol")) for item in symbol_values
     )
     return MorseRegistry(
         schema_version=_required_int(root, "schema_version"),
@@ -151,14 +141,11 @@ def load_verified_morse_registry(
     require_verified_artifacts(manifest, root)
 
     matches = tuple(
-        artifact
-        for artifact in manifest.artifacts
-        if artifact.path == str(registry_path)
+        artifact for artifact in manifest.artifacts if artifact.path == str(registry_path)
     )
     if len(matches) != 1:
         raise ProvenanceError(
-            f"expected one manifest artifact for {registry_path}, "
-            f"found {len(matches)}"
+            f"expected one manifest artifact for {registry_path}, found {len(matches)}"
         )
 
     registry = load_morse_registry(root / registry_path)
@@ -170,8 +157,7 @@ def load_verified_morse_registry(
         )
     if registry.standard_id != MORSE_STANDARD_ID:
         raise MorseError(
-            f"expected standard_id {MORSE_STANDARD_ID!r}, "
-            f"received {registry.standard_id!r}"
+            f"expected standard_id {MORSE_STANDARD_ID!r}, received {registry.standard_id!r}"
         )
     return registry
 
@@ -193,9 +179,7 @@ def _symbol_from_mapping(value: Mapping[str, object]) -> MorseSymbol:
 
 
 def _validate_pattern(pattern: str) -> None:
-    if not pattern or any(
-        character not in _VALID_PATTERN_CHARACTERS for character in pattern
-    ):
+    if not pattern or any(character not in _VALID_PATTERN_CHARACTERS for character in pattern):
         raise MorseError("Morse pattern must contain only '.' and '-' characters")
     if len(pattern) > 8:
         raise MorseError("Morse pattern must not exceed eight elements")
