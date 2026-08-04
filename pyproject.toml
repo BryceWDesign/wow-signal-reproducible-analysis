@@ -23,7 +23,6 @@ keywords = [
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
@@ -73,6 +72,7 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "RUF", "UP"]
+allowed-confusables = ["×"]
 
 [tool.ruff.format]
 indent-style = "space"
