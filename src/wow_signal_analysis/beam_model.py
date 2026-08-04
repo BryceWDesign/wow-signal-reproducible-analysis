@@ -75,9 +75,7 @@ class BeamSampleFit:
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise BeamModelError(
-                "residual_snr must equal observed_snr minus predicted_snr"
-            )
+            raise BeamModelError("residual_snr must equal observed_snr minus predicted_snr")
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,9 +111,7 @@ class GaussianTransitFit:
             raise BeamModelError("fit errors must be non-negative")
         if len(self.samples) < _MINIMUM_SAMPLES:
             raise BeamModelError("fit must contain at least three samples")
-        if tuple(sample.sample_index for sample in self.samples) != tuple(
-            range(len(self.samples))
-        ):
+        if tuple(sample.sample_index for sample in self.samples) != tuple(range(len(self.samples))):
             raise BeamModelError("fit sample indices must be contiguous and zero-based")
 
         expected_fwhm = gaussian_fwhm(self.sigma_seconds)
@@ -143,9 +139,7 @@ class GaussianTransitFit:
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise BeamModelError(
-                "root_mean_squared_error does not match sum_squared_error"
-            )
+            raise BeamModelError("root_mean_squared_error does not match sum_squared_error")
 
     @property
     def sample_count(self) -> int:
@@ -218,9 +212,7 @@ def fit_gaussian_transit(
     normalized = tuple(samples)
     if len(normalized) < _MINIMUM_SAMPLES:
         raise BeamModelError("at least three signal samples are required")
-    if tuple(sample.sample_index for sample in normalized) != tuple(
-        range(len(normalized))
-    ):
+    if tuple(sample.sample_index for sample in normalized) != tuple(range(len(normalized))):
         raise BeamModelError("sample indices must be contiguous and zero-based")
 
     return fit_gaussian_series(
@@ -248,12 +240,8 @@ def fit_gaussian_series(
     average_cadence = (times[-1] - times[0]) / (len(times) - 1)
     span = times[-1] - times[0]
 
-    original_center_lower = (
-        times[0] - search_config.center_padding_cadences * average_cadence
-    )
-    original_center_upper = (
-        times[-1] + search_config.center_padding_cadences * average_cadence
-    )
+    original_center_lower = times[0] - search_config.center_padding_cadences * average_cadence
+    original_center_upper = times[-1] + search_config.center_padding_cadences * average_cadence
     original_sigma_lower = search_config.minimum_sigma_cadences * average_cadence
     original_sigma_upper = search_config.maximum_sigma_spans * span
 
@@ -278,21 +266,15 @@ def fit_gaussian_series(
                 )
                 if candidate is None:
                     continue
-                if round_best is None or _candidate_key(candidate) < _candidate_key(
-                    round_best
-                ):
+                if round_best is None or _candidate_key(candidate) < _candidate_key(round_best):
                     round_best = candidate
 
         if round_best is None:
             raise BeamModelError("Gaussian search produced no finite candidate fit")
         best = round_best
 
-        center_step = (center_upper - center_lower) / (
-            search_config.grid_points - 1
-        )
-        sigma_step = (sigma_upper - sigma_lower) / (
-            search_config.grid_points - 1
-        )
+        center_step = (center_upper - center_lower) / (search_config.grid_points - 1)
+        sigma_step = (sigma_upper - sigma_lower) / (search_config.grid_points - 1)
 
         center_lower = max(
             original_center_lower,
@@ -374,23 +356,21 @@ def _fit_candidate(
     center_seconds: float,
     sigma_seconds: float,
 ) -> _CandidateFit | None:
-    basis = tuple(
-        math.exp(-0.5 * ((time - center_seconds) / sigma_seconds) ** 2)
-        for time in times
-    )
+    basis = tuple(math.exp(-0.5 * ((time - center_seconds) / sigma_seconds) ** 2) for time in times)
     denominator = sum(value**2 for value in basis)
     if denominator <= 0.0:
         return None
 
-    amplitude = sum(
-        observed_value * basis_value
-        for observed_value, basis_value in zip(observed, basis, strict=True)
-    ) / denominator
+    amplitude = (
+        sum(
+            observed_value * basis_value
+            for observed_value, basis_value in zip(observed, basis, strict=True)
+        )
+        / denominator
+    )
 
     if not math.isfinite(amplitude) or amplitude <= 0.0:
-        raise BeamModelError(
-            "Gaussian candidate amplitude must be positive and finite"
-        )
+        raise BeamModelError("Gaussian candidate amplitude must be positive and finite")
 
     sse = sum(
         (observed_value - amplitude * basis_value) ** 2
