@@ -57,37 +57,28 @@ class ThresholdMorseComparison:
             and self.upper_bound_exclusive is not None
             and self.lower_bound_inclusive >= self.upper_bound_exclusive
         ):
-            raise MorseCorrespondenceError(
-                "threshold interval bounds must be strictly ordered"
-            )
+            raise MorseCorrespondenceError("threshold interval bounds must be strictly ordered")
         if not self.binary_pattern or any(
             character not in {"0", "1"} for character in self.binary_pattern
         ):
-            raise MorseCorrespondenceError(
-                "binary_pattern must contain only '0' and '1'"
-            )
+            raise MorseCorrespondenceError("binary_pattern must contain only '0' and '1'")
         if not self.morse_pattern or any(
             character not in {".", "-"} for character in self.morse_pattern
         ):
-            raise MorseCorrespondenceError(
-                "morse_pattern must contain only '.' and '-'"
-            )
+            raise MorseCorrespondenceError("morse_pattern must contain only '.' and '-'")
         if len(self.binary_pattern) != len(self.morse_pattern):
             raise MorseCorrespondenceError(
                 "binary_pattern and morse_pattern must have equal length"
             )
 
         expected_pattern = "".join(
-            self.polarity.render(character == "1")
-            for character in self.binary_pattern
+            self.polarity.render(character == "1") for character in self.binary_pattern
         )
         if self.morse_pattern != expected_pattern:
             raise MorseCorrespondenceError(
                 "morse_pattern does not match binary_pattern and polarity"
             )
-        if any(
-            symbol.pattern != self.morse_pattern for symbol in self.matched_symbols
-        ):
+        if any(symbol.pattern != self.morse_pattern for symbol in self.matched_symbols):
             raise MorseCorrespondenceError(
                 "matched_symbols must use the comparison's Morse pattern"
             )
@@ -117,15 +108,12 @@ class MorseCorrespondenceReport:
         if not self.values:
             raise MorseCorrespondenceError("report values must not be empty")
         if self.threshold_cases != enumerate_threshold_cases(self.values):
-            raise MorseCorrespondenceError(
-                "report threshold_cases do not match report values"
-            )
+            raise MorseCorrespondenceError("report threshold_cases do not match report values")
 
         expected_comparison_count = len(self.threshold_cases) * 4
         if len(self.comparisons) != expected_comparison_count:
             raise MorseCorrespondenceError(
-                "report must include forward and reverse comparisons "
-                "under both polarities"
+                "report must include forward and reverse comparisons under both polarities"
             )
 
         expected_keys = {
@@ -147,9 +135,7 @@ class MorseCorrespondenceReport:
     def assigned_comparisons(self) -> tuple[ThresholdMorseComparison, ...]:
         """Return only comparisons matching official printable symbols."""
 
-        return tuple(
-            comparison for comparison in self.comparisons if comparison.is_assigned
-        )
+        return tuple(comparison for comparison in self.comparisons if comparison.is_assigned)
 
     @property
     def unique_assigned_symbols(self) -> tuple[MorseSymbol, ...]:
