@@ -14,14 +14,10 @@ _PYPROJECT_PATH = _REPOSITORY_ROOT / "pyproject.toml"
 def _top_level_scalar(document: str, key: str) -> str:
     prefix = f"{key}:"
     matches = tuple(
-        line[len(prefix) :].strip()
-        for line in document.splitlines()
-        if line.startswith(prefix)
+        line[len(prefix) :].strip() for line in document.splitlines() if line.startswith(prefix)
     )
     if len(matches) != 1:
-        raise AssertionError(
-            f"expected one top-level {key!r} field, found {len(matches)}"
-        )
+        raise AssertionError(f"expected one top-level {key!r} field, found {len(matches)}")
 
     value = matches[0]
     if len(value) >= 2 and value[0] == value[-1] == '"':
@@ -31,9 +27,7 @@ def _top_level_scalar(document: str, key: str) -> str:
 
 def test_citation_metadata_matches_package_identity() -> None:
     citation = _CITATION_PATH.read_text(encoding="utf-8")
-    project = tomllib.loads(
-        _PYPROJECT_PATH.read_text(encoding="utf-8")
-    )["project"]
+    project = tomllib.loads(_PYPROJECT_PATH.read_text(encoding="utf-8"))["project"]
 
     assert _top_level_scalar(citation, "cff-version") == "1.2.0"
     assert _top_level_scalar(citation, "type") == "software"
@@ -81,9 +75,7 @@ def test_contribution_policy_declares_all_evidence_classes() -> None:
 
 
 def test_contribution_policy_requires_provenance_and_complete_validation() -> None:
-    policy = " ".join(
-        _CONTRIBUTING_PATH.read_text(encoding="utf-8").split()
-    )
+    policy = " ".join(_CONTRIBUTING_PATH.read_text(encoding="utf-8").split())
 
     required_requirements = (
         "Update the matching manifest",
@@ -99,9 +91,7 @@ def test_contribution_policy_requires_provenance_and_complete_validation() -> No
 
 
 def test_contribution_policy_preserves_interpretive_limits() -> None:
-    policy = " ".join(
-        _CONTRIBUTING_PATH.read_text(encoding="utf-8").split()
-    )
+    policy = " ".join(_CONTRIBUTING_PATH.read_text(encoding="utf-8").split())
 
     assert "must never be presented as recovered transmitter intent" in policy
     assert "must not be described as transmitted text" in policy
