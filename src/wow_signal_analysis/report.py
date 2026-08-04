@@ -18,12 +18,11 @@ from wow_signal_analysis.claim_ledger import (
     ClaimVerdict,
 )
 from wow_signal_analysis.hypothesis_matrix import HypothesisStatus
+from wow_signal_analysis.morse_correspondence import ThresholdMorseComparison
 from wow_signal_analysis.quantization import FitMetric
 
 ANALYSIS_REPORT_ID: Final = "wow-signal-evidence-report-v1"
-ANALYSIS_REPORT_TITLE: Final = (
-    "Reproducible, Evidence-Bound Analysis of the 1977 Wow! Signal"
-)
+ANALYSIS_REPORT_TITLE: Final = "Reproducible, Evidence-Bound Analysis of the 1977 Wow! Signal"
 
 
 class ReportRenderError(ValueError):
@@ -40,31 +39,19 @@ class RenderedAnalysisReport:
 
     def __post_init__(self) -> None:
         if self.report_id != ANALYSIS_REPORT_ID:
-            raise ReportRenderError(
-                f"report_id must be {ANALYSIS_REPORT_ID!r}"
-            )
+            raise ReportRenderError(f"report_id must be {ANALYSIS_REPORT_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise ReportRenderError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise ReportRenderError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if not isinstance(self.markdown, str) or not self.markdown:
             raise ReportRenderError("markdown must be non-empty")
-        if not self.markdown.startswith(f"# {ANALYSIS_REPORT_TITLE}\n"):
-            raise ReportRenderError(
-                "markdown must begin with the canonical report title"
-            )
-        if not self.markdown.endswith("\n"):
-            raise ReportRenderError(
-                "markdown must end with exactly one line terminator"
-            )
-        if self.markdown.endswith("\n\n"):
-            raise ReportRenderError(
-                "markdown must not end with a blank trailing line"
-            )
         if "\r" in self.markdown:
-            raise ReportRenderError(
-                "markdown must use LF line endings"
-            )
+            raise ReportRenderError("markdown must use LF line endings")
+        if not self.markdown.startswith(f"# {ANALYSIS_REPORT_TITLE}\n"):
+            raise ReportRenderError("markdown must begin with the canonical report title")
+        if not self.markdown.endswith("\n"):
+            raise ReportRenderError("markdown must end with exactly one line terminator")
+        if self.markdown.endswith("\n\n"):
+            raise ReportRenderError("markdown must not end with a blank trailing line")
 
     @property
     def content(self) -> bytes:
@@ -91,9 +78,7 @@ def build_analysis_report(
     """Render one complete evidence-bound Markdown report."""
 
     if not isinstance(snapshot, AnalysisSnapshot):
-        raise ReportRenderError(
-            "snapshot must be an AnalysisSnapshot"
-        )
+        raise ReportRenderError("snapshot must be an AnalysisSnapshot")
 
     markdown = _render_markdown(snapshot)
 
@@ -141,7 +126,7 @@ def _render_header(snapshot: AnalysisSnapshot) -> str:
             (
                 "> This report distinguishes direct observations, reproducible "
                 "transformations, compatible hypotheses, and unsupported "
-                "conclusions. It does not claim a decoded alien message."
+                "conclusions. These results do not claim a decoded alien message."
             ),
         )
     )
@@ -202,9 +187,9 @@ def _render_five_layer_summary(
                 f"`R² = {_format_float(snapshot.gaussian_fit.coefficient_of_determination)}`."
             ),
             (
-                f"3. **BEACON** — A stable artificial carrier is compatible with "
-                f"the coarse envelope, but the claim ledger classifies that "
-                f"possibility as `compatible-not-proven`."
+                "3. **BEACON** — A stable artificial carrier is compatible with "
+                "the coarse envelope, but the claim ledger classifies that "
+                "possibility as `compatible-not-proven`."
             ),
             (
                 f"4. **HYDROGEN** — The historical frequency estimate is "
@@ -278,10 +263,7 @@ def _render_observation_table(
                 f"**Strict single peak:** "
                 f"`{_boolean_text(snapshot.profile.is_strict_single_peak)}`  "
             ),
-            (
-                f"**Exact palindrome:** "
-                f"`{_boolean_text(snapshot.profile.is_exact_palindrome)}`"
-            ),
+            (f"**Exact palindrome:** `{_boolean_text(snapshot.profile.is_exact_palindrome)}`"),
             "",
             "### Mirrored sample comparisons",
             "",
@@ -363,12 +345,8 @@ def _render_model_comparison(
             str(rank),
             result.model.value,
             str(result.parameter_count),
-            _format_float(
-                result.root_mean_squared_prediction_error
-            ),
-            _format_float(
-                result.mean_absolute_prediction_error
-            ),
+            _format_float(result.root_mean_squared_prediction_error),
+            _format_float(result.mean_absolute_prediction_error),
             _format_float(result.prediction_sum_squares),
         )
         for rank, result in enumerate(
@@ -407,21 +385,11 @@ def _render_quantization_sensitivity(
     rows = tuple(
         (
             metric.value,
-            _format_float(
-                snapshot.quantization.envelope(metric).minimum
-            ),
-            _format_float(
-                snapshot.quantization.envelope(metric).maximum
-            ),
-            _format_float(
-                snapshot.quantization.envelope(metric).span
-            ),
-            snapshot.quantization.envelope(
-                metric
-            ).minimum_corner_pattern,
-            snapshot.quantization.envelope(
-                metric
-            ).maximum_corner_pattern,
+            _format_float(snapshot.quantization.envelope(metric).minimum),
+            _format_float(snapshot.quantization.envelope(metric).maximum),
+            _format_float(snapshot.quantization.envelope(metric).span),
+            snapshot.quantization.envelope(metric).minimum_corner_pattern,
+            snapshot.quantization.envelope(metric).maximum_corner_pattern,
         )
         for metric in FitMetric
     )
@@ -462,21 +430,26 @@ def _render_symbolic_correspondence(
 
     for glyph in snapshot.config.selected_morse_glyphs:
         symbol = snapshot.morse_registry.symbol_for_glyph(glyph)
-        comparisons = snapshot.morse_correspondence.comparisons_for_glyph(
-            glyph
-        )
+        comparisons = snapshot.morse_correspondence.comparisons_for_glyph(glyph)
         null_summary = snapshot.permutation_null.summary_for_glyph(glyph)
 
         if comparisons:
-            observed = "; ".join(
-                (
+
+            def _comparison_text(
+                comparison: ThresholdMorseComparison,
+            ) -> str:
+                interval = _interval_text(
+                    comparison.lower_bound_inclusive,
+                    comparison.upper_bound_exclusive,
+                )
+                return (
                     f"cut {comparison.cut_index}, "
                     f"{comparison.direction.value}, "
                     f"{comparison.polarity.value}, "
-                    f"{_interval_text(comparison.lower_bound_inclusive, comparison.upper_bound_exclusive)}"
+                    f"{interval}"
                 )
-                for comparison in comparisons
-            )
+
+            observed = "; ".join(_comparison_text(comparison) for comparison in comparisons)
             pattern = comparisons[0].morse_pattern
         else:
             observed = "No observed correspondence"
@@ -543,15 +516,9 @@ def _render_frequency_context(
             estimate.status.value,
             _format_decimal(estimate.frequency_mhz),
             _format_decimal(estimate.uncertainty_mhz),
+            _format_decimal(snapshot.frequency_context.offset_for(estimate.estimate_id).delta_mhz),
             _format_decimal(
-                snapshot.frequency_context.offset_for(
-                    estimate.estimate_id
-                ).delta_mhz
-            ),
-            _format_decimal(
-                snapshot.frequency_context.offset_for(
-                    estimate.estimate_id
-                ).absolute_offset_khz
+                snapshot.frequency_context.offset_for(estimate.estimate_id).absolute_offset_khz
             ),
             _boolean_text(
                 snapshot.frequency_context.offset_for(
@@ -599,13 +566,7 @@ def _render_claim_ledger(
     count_rows = tuple(
         (
             classification.value,
-            str(
-                len(
-                    snapshot.claim_ledger.claims_by_classification(
-                        classification
-                    )
-                )
-            ),
+            str(len(snapshot.claim_ledger.claims_by_classification(classification))),
         )
         for classification in ClaimClassification
     )
@@ -620,9 +581,7 @@ def _render_claim_ledger(
         for claim in snapshot.claim_ledger.topological_claims
     )
 
-    not_established = snapshot.claim_ledger.claims_by_verdict(
-        ClaimVerdict.NOT_ESTABLISHED
-    )
+    not_established = snapshot.claim_ledger.claims_by_verdict(ClaimVerdict.NOT_ESTABLISHED)
 
     return "\n".join(
         (
@@ -645,10 +604,7 @@ def _render_claim_ledger(
             "",
             "**Claims explicitly not established:**",
             "",
-            *(
-                f"- `{claim.claim_id}` — {claim.statement}"
-                for claim in not_established
-            ),
+            *(f"- `{claim.claim_id}` — {claim.statement}" for claim in not_established),
         )
     )
 
@@ -659,13 +615,7 @@ def _render_hypothesis_matrix(
     status_rows = tuple(
         (
             status.value,
-            str(
-                len(
-                    snapshot.hypothesis_matrix.hypotheses_by_status(
-                        status
-                    )
-                )
-            ),
+            str(len(snapshot.hypothesis_matrix.hypotheses_by_status(status))),
         )
         for status in HypothesisStatus
     )
@@ -709,10 +659,7 @@ def _render_interpretive_limits() -> str:
         (
             "## Interpretive limits",
             "",
-            (
-                "- A good beam-shape fit does not identify the emitter, "
-                "its location, or its origin."
-            ),
+            ("- A good beam-shape fit does not identify the emitter, its location, or its origin."),
             (
                 "- Receiver-strength bins do not preserve transmitter-scale "
                 "dot, dash, character, or word timing."
@@ -721,13 +668,8 @@ def _render_interpretive_limits() -> str:
                 "- Analyst-selected thresholds and polarities are transformations, "
                 "not recovered transmitter metadata."
             ),
-            (
-                "- Hydrogen-line context does not establish artificial origin."
-            ),
-            (
-                "- Artificial-carrier compatibility does not establish "
-                "extraterrestrial technology."
-            ),
+            ("- Hydrogen-line context does not establish artificial origin."),
+            ("- Artificial-carrier compatibility does not establish extraterrestrial technology."),
             (
                 "- The surviving measurements do not establish an intentional "
                 "message or decoded plaintext."
@@ -741,46 +683,29 @@ def _markdown_table(
     rows: tuple[tuple[str, ...], ...],
 ) -> str:
     if not headers:
-        raise ReportRenderError(
-            "Markdown table headers must not be empty"
-        )
+        raise ReportRenderError("Markdown table headers must not be empty")
     if any(not header.strip() for header in headers):
-        raise ReportRenderError(
-            "Markdown table headers must be non-empty"
-        )
+        raise ReportRenderError("Markdown table headers must be non-empty")
     if any(len(row) != len(headers) for row in rows):
-        raise ReportRenderError(
-            "Markdown table rows must match the header width"
-        )
+        raise ReportRenderError("Markdown table rows must match the header width")
 
-    header_line = "| " + " | ".join(
-        _escape_cell(header) for header in headers
-    ) + " |"
-    separator_line = "| " + " | ".join(
-        "---" for _ in headers
-    ) + " |"
-    body_lines = tuple(
-        "| " + " | ".join(_escape_cell(cell) for cell in row) + " |"
-        for row in rows
-    )
+    header_line = "| " + " | ".join(_escape_cell(header) for header in headers) + " |"
+    separator_line = "| " + " | ".join("---" for _ in headers) + " |"
+    body_lines = tuple("| " + " | ".join(_escape_cell(cell) for cell in row) + " |" for row in rows)
 
     return "\n".join((header_line, separator_line, *body_lines))
 
 
 def _escape_cell(value: str) -> str:
     if not isinstance(value, str):
-        raise ReportRenderError(
-            "Markdown table values must be strings"
-        )
+        raise ReportRenderError("Markdown table values must be strings")
 
     return " ".join(value.split()).replace("|", "\\|")
 
 
 def _format_float(value: float) -> str:
     if not math.isfinite(value):
-        raise ReportRenderError(
-            "report float values must be finite"
-        )
+        raise ReportRenderError("report float values must be finite")
 
     normalized = 0.0 if abs(value) < 0.5e-12 else value
     return f"{normalized:.6f}"
@@ -788,9 +713,7 @@ def _format_float(value: float) -> str:
 
 def _format_decimal(value: Decimal) -> str:
     if not value.is_finite():
-        raise ReportRenderError(
-            "report decimal values must be finite"
-        )
+        raise ReportRenderError("report decimal values must be finite")
 
     return str(value)
 
@@ -807,16 +730,8 @@ def _interval_text(
     lower_bound_inclusive: Decimal | None,
     upper_bound_exclusive: Decimal | None,
 ) -> str:
-    lower = (
-        "-inf"
-        if lower_bound_inclusive is None
-        else _format_decimal(lower_bound_inclusive)
-    )
-    upper = (
-        "+inf"
-        if upper_bound_exclusive is None
-        else _format_decimal(upper_bound_exclusive)
-    )
+    lower = "-inf" if lower_bound_inclusive is None else _format_decimal(lower_bound_inclusive)
+    upper = "+inf" if upper_bound_exclusive is None else _format_decimal(upper_bound_exclusive)
     left_bracket = "(" if lower_bound_inclusive is None else "["
 
     return f"{left_bracket}{lower}, {upper})"
