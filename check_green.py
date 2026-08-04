@@ -27,20 +27,12 @@ class CheckStep:
     command: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if not self.step_id or any(
-            character.isspace() for character in self.step_id
-        ):
-            raise GreenCheckError(
-                "step_id must be non-empty and contain no whitespace"
-            )
+        if not self.step_id or any(character.isspace() for character in self.step_id):
+            raise GreenCheckError("step_id must be non-empty and contain no whitespace")
         if not self.label.strip():
             raise GreenCheckError("step label must be non-empty")
-        if not self.command or any(
-            not argument for argument in self.command
-        ):
-            raise GreenCheckError(
-                "step command must contain only non-empty arguments"
-            )
+        if not self.command or any(not argument for argument in self.command):
+            raise GreenCheckError("step command must contain only non-empty arguments")
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,40 +65,27 @@ class GreenCheckReport:
 
     def __post_init__(self) -> None:
         if self.planned_step_count <= 0:
-            raise GreenCheckError(
-                "planned_step_count must be positive"
-            )
+            raise GreenCheckError("planned_step_count must be positive")
         if len(self.results) > self.planned_step_count:
-            raise GreenCheckError(
-                "results cannot exceed planned_step_count"
-            )
+            raise GreenCheckError("results cannot exceed planned_step_count")
 
-        step_ids = tuple(
-            result.step.step_id for result in self.results
-        )
+        step_ids = tuple(result.step.step_id for result in self.results)
         if len(set(step_ids)) != len(step_ids):
-            raise GreenCheckError(
-                "completed step IDs must be unique"
-            )
+            raise GreenCheckError("completed step IDs must be unique")
 
     @property
     def passed(self) -> bool:
         """Return whether every planned step completed successfully."""
 
-        return (
-            len(self.results) == self.planned_step_count
-            and all(result.passed for result in self.results)
+        return len(self.results) == self.planned_step_count and all(
+            result.passed for result in self.results
         )
 
     @property
     def failed_results(self) -> tuple[CheckResult, ...]:
         """Return completed steps that exited unsuccessfully."""
 
-        return tuple(
-            result
-            for result in self.results
-            if not result.passed
-        )
+        return tuple(result for result in self.results if not result.passed)
 
 
 def build_check_steps(
@@ -120,13 +99,9 @@ def build_check_steps(
 
     root = repository_root.resolve()
     if not root.is_dir():
-        raise GreenCheckError(
-            f"repository_root must be an existing directory: {root}"
-        )
+        raise GreenCheckError(f"repository_root must be an existing directory: {root}")
     if not python_executable.strip():
-        raise GreenCheckError(
-            "python_executable must be non-empty"
-        )
+        raise GreenCheckError("python_executable must be non-empty")
 
     steps = [
         CheckStep(
@@ -236,20 +211,14 @@ def run_green_checks(
     environment["PYTHONPATH"] = (
         source_directory
         if not existing_pythonpath
-        else source_directory
-        + os.pathsep
-        + existing_pythonpath
+        else source_directory + os.pathsep + existing_pythonpath
     )
 
-    with TemporaryDirectory(
-        prefix="wow-signal-build-"
-    ) as temporary_directory:
+    with TemporaryDirectory(prefix="wow-signal-build-") as temporary_directory:
         steps = build_check_steps(
             root,
             python_executable=python_executable,
-            build_output_directory=Path(
-                temporary_directory
-            ),
+            build_output_directory=Path(temporary_directory),
             include_build=include_build,
         )
         results: list[CheckResult] = []
@@ -276,20 +245,13 @@ def run_green_checks(
             )
             results.append(result)
 
-            status = (
-                "PASS"
-                if result.passed
-                else f"FAIL ({result.return_code})"
-            )
+            status = "PASS" if result.passed else f"FAIL ({result.return_code})"
             print(
                 f"{status}: {step.step_id}",
                 flush=True,
             )
 
-            if (
-                not result.passed
-                and not continue_on_failure
-            ):
+            if not result.passed and not continue_on_failure:
                 break
 
     return GreenCheckReport(
@@ -311,10 +273,7 @@ def main(argv: list[str] | None = None) -> int:
         "--root",
         type=Path,
         default=Path(__file__).resolve().parent,
-        help=(
-            "Repository root. Defaults to the directory containing "
-            "this script."
-        ),
+        help=("Repository root. Defaults to the directory containing this script."),
     )
     parser.add_argument(
         "--python",
@@ -324,9 +283,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-build",
         action="store_true",
-        help=(
-            "Skip wheel and source-distribution construction."
-        ),
+        help=("Skip wheel and source-distribution construction."),
     )
     parser.add_argument(
         "--continue-on-failure",
@@ -340,9 +297,7 @@ def main(argv: list[str] | None = None) -> int:
             arguments.root,
             python_executable=arguments.python,
             include_build=not arguments.skip_build,
-            continue_on_failure=(
-                arguments.continue_on_failure
-            ),
+            continue_on_failure=(arguments.continue_on_failure),
         )
     except (GreenCheckError, OSError) as error:
         print(
@@ -352,17 +307,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if report.passed:
-        print(
-            "QUALITY GATE: GREEN "
-            f"({len(report.results)}/"
-            f"{report.planned_step_count})"
-        )
+        print(f"QUALITY GATE: GREEN ({len(report.results)}/{report.planned_step_count})")
         return 0
 
-    failed = ", ".join(
-        result.step.step_id
-        for result in report.failed_results
-    )
+    failed = ", ".join(result.step.step_id for result in report.failed_results)
     if not failed:
         failed = "incomplete execution"
 
@@ -379,14 +327,7 @@ def _display_command(
     command: tuple[str, ...],
 ) -> str:
     return " ".join(
-        (
-            f'"{argument}"'
-            if any(
-                character.isspace()
-                for character in argument
-            )
-            else argument
-        )
+        (f'"{argument}"' if any(character.isspace() for character in argument) else argument)
         for argument in command
     )
 
