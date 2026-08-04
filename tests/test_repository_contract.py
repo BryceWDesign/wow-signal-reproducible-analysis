@@ -27,9 +27,7 @@ def test_repository_contract_verifies_all_canonical_components() -> None:
 def test_repository_contract_preserves_component_order_and_counts() -> None:
     report = verify_repository_contract(_REPOSITORY_ROOT)
 
-    assert tuple(
-        component.component_id for component in report.components
-    ) == (
+    assert tuple(component.component_id for component in report.components) == (
         "canonical-observation-dataset",
         "international-morse-registry",
         "frequency-context",
@@ -37,9 +35,7 @@ def test_repository_contract_preserves_component_order_and_counts() -> None:
         "hypothesis-matrix",
     )
 
-    assert tuple(
-        component.record_count for component in report.components
-    ) == (
+    assert tuple(component.record_count for component in report.components) == (
         6,
         51,
         3,
@@ -53,29 +49,30 @@ def test_repository_contract_preserves_component_order_and_counts() -> None:
 def test_repository_contract_preserves_canonical_artifact_paths() -> None:
     report = verify_repository_contract(_REPOSITORY_ROOT)
 
-    assert str(
-        report.component_by_id(
-            "canonical-observation-dataset"
-        ).artifact_path
-    ) == "data/raw/wow_6equj5.csv"
+    assert (
+        str(report.component_by_id("canonical-observation-dataset").artifact_path)
+        == "data/raw/wow_6equj5.csv"
+    )
 
-    assert str(
-        report.component_by_id(
-            "international-morse-registry"
-        ).artifact_path
-    ) == "data/reference/itu_m1677_1_morse_symbols.json"
+    assert (
+        str(report.component_by_id("international-morse-registry").artifact_path)
+        == "data/reference/itu_m1677_1_morse_symbols.json"
+    )
 
-    assert str(
-        report.component_by_id("frequency-context").artifact_path
-    ) == "data/reference/frequency_context.json"
+    assert (
+        str(report.component_by_id("frequency-context").artifact_path)
+        == "data/reference/frequency_context.json"
+    )
 
-    assert str(
-        report.component_by_id("claim-ledger").artifact_path
-    ) == "data/reference/claim_ledger.json"
+    assert (
+        str(report.component_by_id("claim-ledger").artifact_path)
+        == "data/reference/claim_ledger.json"
+    )
 
-    assert str(
-        report.component_by_id("hypothesis-matrix").artifact_path
-    ) == "data/reference/hypothesis_matrix.json"
+    assert (
+        str(report.component_by_id("hypothesis-matrix").artifact_path)
+        == "data/reference/hypothesis_matrix.json"
+    )
 
 
 def test_unknown_component_lookup_fails_closed() -> None:
