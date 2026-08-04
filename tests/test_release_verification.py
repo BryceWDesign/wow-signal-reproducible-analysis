@@ -26,10 +26,7 @@ def _artifact(
     content: bytes,
 ) -> GeneratedArtifact:
     return GeneratedArtifact(
-        relative_path=PurePosixPath(
-            "artifacts/generated"
-        )
-        / name,
+        relative_path=PurePosixPath("artifacts/generated") / name,
         media_type="application/octet-stream",
         content=content,
     )
@@ -88,10 +85,7 @@ def _fake_audit(
         bundle_id=bundle.bundle_id,
         analysis_id=bundle.analysis_id,
         artifact_count=len(bundle.payload_artifacts),
-        total_byte_count=sum(
-            artifact.byte_count
-            for artifact in bundle.payload_artifacts
-        ),
+        total_byte_count=sum(artifact.byte_count for artifact in bundle.payload_artifacts),
         manifest_sha256_hex=bundle.manifest.sha256_hex,
     )
 
@@ -212,9 +206,7 @@ def test_release_report_serialization_is_deterministic(
     assert payload["reproduction"]["artifact_count"] == 10
     assert payload["independent_audit"]["status"] == "verified"
     assert report.to_json().endswith("\n")
-    assert report.to_text().startswith(
-        "Release reproduction: verified\n"
-    )
+    assert report.to_text().startswith("Release reproduction: verified\n")
 
 
 def test_release_reproduction_requires_empty_output_directory(
@@ -403,9 +395,7 @@ def test_main_reports_controlled_failure(
         repository_root: Path,
         output_root: Path,
     ) -> release.ReleaseVerificationReport:
-        raise release.ReleaseVerificationError(
-            "reproduction failed"
-        )
+        raise release.ReleaseVerificationError("reproduction failed")
 
     monkeypatch.setattr(
         release,
@@ -423,6 +413,4 @@ def test_main_reports_controlled_failure(
 
     assert status == 1
     assert stdout.getvalue() == ""
-    assert stderr.getvalue() == (
-        "release verification error: reproduction failed\n"
-    )
+    assert stderr.getvalue() == ("release verification error: reproduction failed\n")
