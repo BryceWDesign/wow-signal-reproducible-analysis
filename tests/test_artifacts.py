@@ -66,9 +66,7 @@ def _checksum_artifact(
     return GeneratedArtifact(
         relative_path=checksum_path,
         media_type="text/plain",
-        content=(
-            f"{source.sha256_hex}  {source.relative_path.name}\n"
-        ).encode("ascii"),
+        content=(f"{source.sha256_hex}  {source.relative_path.name}\n").encode("ascii"),
     )
 
 
@@ -86,18 +84,13 @@ def test_bundle_serialization_is_byte_for_byte_deterministic(
     assert bundle.snapshot.content == snapshot.to_json().encode("utf-8")
     assert bundle.report.content == rendered_report.content
     assert bundle.beam_fit_figure.content == figures.beam_fit.content
-    assert (
-        bundle.model_comparison_figure.content
-        == figures.model_comparison.content
-    )
+    assert bundle.model_comparison_figure.content == figures.model_comparison.content
 
 
 def test_bundle_separates_payload_from_manifest_artifacts(
     bundle: AnalysisArtifactBundle,
 ) -> None:
-    assert tuple(
-        artifact.relative_path for artifact in bundle.payload_artifacts
-    ) == (
+    assert tuple(artifact.relative_path for artifact in bundle.payload_artifacts) == (
         ANALYSIS_SNAPSHOT_ARTIFACT_PATH,
         ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
         ANALYSIS_REPORT_ARTIFACT_PATH,
@@ -107,13 +100,8 @@ def test_bundle_separates_payload_from_manifest_artifacts(
         ANALYSIS_MODEL_COMPARISON_FIGURE_PATH,
         ANALYSIS_MODEL_COMPARISON_CHECKSUM_PATH,
     )
-    assert tuple(
-        artifact.relative_path for artifact in bundle.artifacts
-    ) == (
-        *(
-            artifact.relative_path
-            for artifact in bundle.payload_artifacts
-        ),
+    assert tuple(artifact.relative_path for artifact in bundle.artifacts) == (
+        *(artifact.relative_path for artifact in bundle.payload_artifacts),
         ANALYSIS_BUNDLE_MANIFEST_PATH,
         ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
     )
@@ -136,14 +124,10 @@ def test_manifest_exactly_inventories_payload_artifacts(
     )
     assert decoded == manifest.to_mapping()
     assert bundle.manifest.content == manifest.to_json().encode("utf-8")
-    assert tuple(
-        entry.relative_path for entry in manifest.artifacts
-    ) == tuple(
+    assert tuple(entry.relative_path for entry in manifest.artifacts) == tuple(
         artifact.relative_path for artifact in bundle.payload_artifacts
     )
-    assert tuple(
-        entry.sha256_hex for entry in manifest.artifacts
-    ) == tuple(
+    assert tuple(entry.sha256_hex for entry in manifest.artifacts) == tuple(
         artifact.sha256_hex for artifact in bundle.payload_artifacts
     )
 
@@ -163,29 +147,20 @@ def test_checksum_files_use_matching_digests_and_basenames(
     )
 
     for primary, checksum in primary_and_checksum:
-        expected = (
-            f"{primary.sha256_hex}  {primary.relative_path.name}\n"
-        ).encode("ascii")
+        expected = (f"{primary.sha256_hex}  {primary.relative_path.name}\n").encode("ascii")
         assert checksum.content == expected
 
-    assert bundle.total_byte_count == sum(
-        artifact.byte_count for artifact in bundle.artifacts
-    )
+    assert bundle.total_byte_count == sum(artifact.byte_count for artifact in bundle.artifacts)
 
 
 def test_bundle_supports_strict_artifact_lookup(
     bundle: AnalysisArtifactBundle,
 ) -> None:
     for artifact in bundle.artifacts:
-        assert (
-            bundle.artifact_by_path(artifact.relative_path)
-            is artifact
-        )
+        assert bundle.artifact_by_path(artifact.relative_path) is artifact
 
     with pytest.raises(ArtifactGenerationError, match="found 0"):
-        bundle.artifact_by_path(
-            PurePosixPath("artifacts/generated/missing.json")
-        )
+        bundle.artifact_by_path(PurePosixPath("artifacts/generated/missing.json"))
 
 
 def test_svg_artifacts_are_accessible_and_self_contained(
@@ -204,9 +179,7 @@ def test_svg_artifacts_are_accessible_and_self_contained(
 
     for artifact, figure_id in expected_identifiers:
         svg = artifact.content.decode("utf-8")
-        assert svg.startswith(
-            '<svg xmlns="http://www.w3.org/2000/svg"'
-        )
+        assert svg.startswith('<svg xmlns="http://www.w3.org/2000/svg"')
         assert svg.endswith("</svg>\n")
         assert f'id="{figure_id}-title"' in svg
         assert f'id="{figure_id}-description"' in svg
@@ -259,10 +232,13 @@ def test_writer_replaces_existing_artifacts_deterministically(
     )
 
     assert first == second
-    assert verify_written_analysis_artifacts(
-        bundle,
-        repository_root,
-    ) == second
+    assert (
+        verify_written_analysis_artifacts(
+            bundle,
+            repository_root,
+        )
+        == second
+    )
 
 
 def test_writer_can_refuse_overwrite(
@@ -446,8 +422,7 @@ def test_bundle_rejects_figure_checksum_drift(
         relative_path=ANALYSIS_BEAM_FIT_CHECKSUM_PATH,
         media_type="text/plain",
         content=(
-            b"0000000000000000000000000000000000000000000000000000000000000000"
-            b"  beam_fit.svg\n"
+            b"0000000000000000000000000000000000000000000000000000000000000000  beam_fit.svg\n"
         ),
     )
 
