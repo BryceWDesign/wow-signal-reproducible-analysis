@@ -33,9 +33,7 @@ def test_verified_ledger_preserves_all_claim_classes() -> None:
     assert len(ledger.claims) == 12
 
     assert {
-        classification: len(
-            ledger.claims_by_classification(classification)
-        )
+        classification: len(ledger.claims_by_classification(classification))
         for classification in ClaimClassification
     } == {
         ClaimClassification.OBSERVED: 1,
@@ -49,15 +47,10 @@ def test_verified_ledger_preserves_all_claim_classes() -> None:
 def test_classifications_are_bound_to_non_overclaiming_verdicts() -> None:
     ledger = load_claim_ledger(_LEDGER_PATH)
 
-    assert {
-        claim.classification: claim.verdict
-        for claim in ledger.claims
-    } == {
+    assert {claim.classification: claim.verdict for claim in ledger.claims} == {
         ClaimClassification.OBSERVED: ClaimVerdict.SUPPORTED,
         ClaimClassification.DERIVED: ClaimVerdict.REPRODUCIBLE,
-        ClaimClassification.COMPATIBILITY: (
-            ClaimVerdict.COMPATIBLE_NOT_PROVEN
-        ),
+        ClaimClassification.COMPATIBILITY: (ClaimVerdict.COMPATIBLE_NOT_PROVEN),
         ClaimClassification.INTERPRETIVE: ClaimVerdict.SUMMARY_ONLY,
         ClaimClassification.SPECULATIVE: ClaimVerdict.NOT_ESTABLISHED,
     }
@@ -66,38 +59,26 @@ def test_classifications_are_bound_to_non_overclaiming_verdicts() -> None:
 def test_topological_order_places_dependencies_before_dependents() -> None:
     ledger = load_claim_ledger(_LEDGER_PATH)
     ordered = ledger.topological_claims
-    positions = {
-        claim.claim_id: index
-        for index, claim in enumerate(ordered)
-    }
+    positions = {claim.claim_id: index for index, claim in enumerate(ordered)}
 
     assert len(ordered) == len(ledger.claims)
     assert len({claim.claim_id for claim in ordered}) == len(ordered)
 
     for claim in ordered:
         assert all(
-            positions[dependency] < positions[claim.claim_id]
-            for dependency in claim.depends_on
+            positions[dependency] < positions[claim.claim_id] for dependency in claim.depends_on
         )
 
 
 def test_symbolic_correspondence_is_recorded_as_non_unique() -> None:
     ledger = load_claim_ledger(_LEDGER_PATH)
-    question = ledger.claim_by_id(
-        "derived-question-mark-correspondence"
-    )
-    comma = ledger.claim_by_id(
-        "derived-comma-correspondence"
-    )
-    null_frequency = ledger.claim_by_id(
-        "derived-question-null-frequency"
-    )
+    question = ledger.claim_by_id("derived-question-mark-correspondence")
+    comma = ledger.claim_by_id("derived-comma-correspondence")
+    null_frequency = ledger.claim_by_id("derived-question-null-frequency")
 
     assert question.verdict is ClaimVerdict.REPRODUCIBLE
     assert "analyst-declared" in question.limitations[0]
-    assert comma.depends_on == (
-        "derived-question-mark-correspondence",
-    )
+    assert comma.depends_on == ("derived-question-mark-correspondence",)
     assert "non-unique" in comma.limitations[0]
     assert "96 of 720" in null_frequency.statement
     assert "not a probability" in null_frequency.limitations[0]
@@ -105,28 +86,19 @@ def test_symbolic_correspondence_is_recorded_as_non_unique() -> None:
 
 def test_five_layer_phrase_is_summary_only_not_recovered_plaintext() -> None:
     ledger = load_claim_ledger(_LEDGER_PATH)
-    summary = ledger.claim_by_id(
-        "interpretive-five-layer-summary"
-    )
+    summary = ledger.claim_by_id("interpretive-five-layer-summary")
 
     assert summary.classification is ClaimClassification.INTERPRETIVE
     assert summary.verdict is ClaimVerdict.SUMMARY_ONLY
-    assert (
-        "do not constitute recovered plaintext"
-        in summary.limitations[0]
-    )
+    assert "do not constitute recovered plaintext" in summary.limitations[0]
     assert "compatible-beacon-hypothesis" in summary.depends_on
 
 
 def test_extraterrestrial_origin_and_message_intent_remain_unestablished() -> None:
     ledger = load_claim_ledger(_LEDGER_PATH)
 
-    intentional_message = ledger.claim_by_id(
-        "speculative-intentional-message"
-    )
-    extraterrestrial = ledger.claim_by_id(
-        "speculative-extraterrestrial-technology"
-    )
+    intentional_message = ledger.claim_by_id("speculative-intentional-message")
+    extraterrestrial = ledger.claim_by_id("speculative-extraterrestrial-technology")
 
     assert intentional_message.verdict is ClaimVerdict.NOT_ESTABLISHED
     assert extraterrestrial.verdict is ClaimVerdict.NOT_ESTABLISHED
@@ -300,9 +272,7 @@ def test_verified_loader_detects_ledger_tampering(tmp_path: Path) -> None:
     manifest_target.parent.mkdir(parents=True)
     ledger_target.parent.mkdir(parents=True)
 
-    manifest_target.write_bytes(
-        (_REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH).read_bytes()
-    )
+    manifest_target.write_bytes((_REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH).read_bytes())
     ledger_target.write_text(
         _LEDGER_PATH.read_text(encoding="utf-8") + "\n",
         encoding="utf-8",
@@ -321,9 +291,7 @@ def test_verified_loader_rejects_manifest_record_count_drift(
     ledger_target.parent.mkdir(parents=True)
 
     manifest_payload = json.loads(
-        (
-            _REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH
-        ).read_text(encoding="utf-8")
+        (_REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH).read_text(encoding="utf-8")
     )
     manifest_payload["artifacts"][0]["record_count"] = 11
     manifest_target.write_text(
@@ -348,9 +316,7 @@ def test_verified_loader_rejects_undeclared_external_source(
     ledger_target.parent.mkdir(parents=True)
 
     manifest_payload = json.loads(
-        (
-            _REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH
-        ).read_text(encoding="utf-8")
+        (_REPOSITORY_ROOT / CLAIM_LEDGER_MANIFEST_PATH).read_text(encoding="utf-8")
     )
     manifest_payload["sources"] = tuple(
         source
