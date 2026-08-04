@@ -66,8 +66,7 @@ def test_loader_rejects_a_missing_or_unexpected_header(tmp_path: Path) -> None:
         tmp_path,
         "0,0,6,6,7\n",
         header=(
-            "sample_index,elapsed_seconds,printer_symbol,"
-            "snr_lower_inclusive,snr_upper_exclusive\n"
+            "sample_index,elapsed_seconds,printer_symbol,snr_lower_inclusive,snr_upper_exclusive\n"
         ),
     )
     with pytest.raises(DatasetError, match="unexpected CSV columns"):
