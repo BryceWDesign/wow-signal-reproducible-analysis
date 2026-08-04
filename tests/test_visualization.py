@@ -54,10 +54,7 @@ def test_figure_set_identity_and_order_are_deterministic(
     assert figures == second
     assert figures.figure_set_id == ANALYSIS_FIGURE_SET_ID
     assert figures.analysis_id == snapshot.analysis_id
-    assert tuple(
-        figure.figure_id
-        for figure in figures.figures
-    ) == (
+    assert tuple(figure.figure_id for figure in figures.figures) == (
         BEAM_FIT_FIGURE_ID,
         MODEL_COMPARISON_FIGURE_ID,
     )
@@ -67,22 +64,14 @@ def test_figures_are_self_contained_accessible_svg(
     figures: AnalysisFigureSet,
 ) -> None:
     for figure in figures.figures:
-        assert figure.svg.startswith(
-            '<svg xmlns="http://www.w3.org/2000/svg"'
-        )
+        assert figure.svg.startswith('<svg xmlns="http://www.w3.org/2000/svg"')
         assert figure.svg.endswith("</svg>\n")
         assert "\r" not in figure.svg
         assert "<script" not in figure.svg.lower()
         assert " href=" not in figure.svg.lower()
         assert "xlink:href" not in figure.svg.lower()
-        assert (
-            f'<title id="{figure.figure_id}-title">'
-            in figure.svg
-        )
-        assert (
-            f'<desc id="{figure.figure_id}-description">'
-            in figure.svg
-        )
+        assert f'<title id="{figure.figure_id}-title">' in figure.svg
+        assert f'<desc id="{figure.figure_id}-description">' in figure.svg
         assert figure.content == figure.svg.encode("utf-8")
         assert figure.byte_count == len(figure.content)
 
@@ -94,17 +83,9 @@ def test_beam_figure_preserves_observations_and_fit_context(
 
     assert "Sequence 6EQUJ5" in figure.svg
     assert "R²=" in figure.svg
-    assert figure.svg.count(
-        '<circle class="observed-point"'
-    ) == 7
-    assert (
-        "Sample 0: elapsed 0 seconds, observed SNR 6.5"
-        in figure.svg
-    )
-    assert (
-        "Sample 5: elapsed 60 seconds, observed SNR 5.5"
-        in figure.svg
-    )
+    assert figure.svg.count('<circle class="observed-point"') == 7
+    assert "Sample 0: elapsed 0 seconds, observed SNR 6.5" in figure.svg
+    assert "Sample 5: elapsed 60 seconds, observed SNR 5.5" in figure.svg
     assert "Gaussian fit" in figure.svg
 
 
@@ -121,9 +102,7 @@ def test_model_comparison_figure_preserves_ranking_and_errors(
     ):
         assert model in figure.svg
 
-    assert figure.svg.count(
-        '<rect class="model-bar'
-    ) == 4
+    assert figure.svg.count('<rect class="model-bar') == 4
     assert "2.013" in figure.svg
     assert "6.596" in figure.svg
     assert "11.250" in figure.svg
@@ -134,14 +113,8 @@ def test_model_comparison_figure_preserves_ranking_and_errors(
 def test_figure_lookup_fails_closed(
     figures: AnalysisFigureSet,
 ) -> None:
-    assert (
-        figures.figure_by_id(BEAM_FIT_FIGURE_ID)
-        is figures.beam_fit
-    )
-    assert (
-        figures.figure_by_id(MODEL_COMPARISON_FIGURE_ID)
-        is figures.model_comparison
-    )
+    assert figures.figure_by_id(BEAM_FIT_FIGURE_ID) is figures.beam_fit
+    assert figures.figure_by_id(MODEL_COMPARISON_FIGURE_ID) is figures.model_comparison
 
     with pytest.raises(
         VisualizationError,
@@ -188,10 +161,7 @@ def test_figure_metadata_rejects_identity_and_unsafe_content(
             description=figures.beam_fit.description,
             svg=figures.beam_fit.svg.replace(
                 "<style>",
-                (
-                    '<image href="https://example.invalid/figure.svg" />'
-                    "<style>"
-                ),
+                ('<image href="https://example.invalid/figure.svg" /><style>'),
             ),
         )
 
