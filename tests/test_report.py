@@ -65,9 +65,7 @@ def test_report_identity_and_content_digest_are_deterministic(
 def test_report_has_canonical_title_and_stable_line_endings(
     report: RenderedAnalysisReport,
 ) -> None:
-    assert report.markdown.startswith(
-        f"# {ANALYSIS_REPORT_TITLE}\n"
-    )
+    assert report.markdown.startswith(f"# {ANALYSIS_REPORT_TITLE}\n")
     assert report.markdown.endswith("\n")
     assert not report.markdown.endswith("\n\n")
     assert "\r" not in report.markdown
@@ -94,10 +92,7 @@ def test_report_preserves_exact_morse_null_fractions(
 ) -> None:
     assert "96/720 (2/15)" in report.markdown
     assert "192/20160 (1/105)" in report.markdown
-    assert (
-        "does not establish intentional Morse transmission"
-        in report.markdown
-    )
+    assert "does not establish intentional Morse transmission" in report.markdown
 
 
 def test_report_contains_all_major_analysis_sections(
