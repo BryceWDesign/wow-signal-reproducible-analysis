@@ -62,9 +62,7 @@ def test_canonical_null_enumerates_all_six_factorial_orderings() -> None:
     assert report.total_unique_sequences == 720
     assert report.comparisons_per_sequence == 28
     assert report.total_comparison_count == 20_160
-    assert tuple(outcome.permutation_index for outcome in report.outcomes) == tuple(
-        range(720)
-    )
+    assert tuple(outcome.permutation_index for outcome in report.outcomes) == tuple(range(720))
     assert len({outcome.values for outcome in report.outcomes}) == 720
 
 
@@ -186,9 +184,7 @@ def test_outcome_validation_rejects_impossible_counts() -> None:
             permutation_index=0,
             values=(Decimal("1"),),
             total_comparisons=1,
-            glyph_counts=(
-                GlyphComparisonCount(glyph="?", comparison_count=2),
-            ),
+            glyph_counts=(GlyphComparisonCount(glyph="?", comparison_count=2),),
         )
 
 
