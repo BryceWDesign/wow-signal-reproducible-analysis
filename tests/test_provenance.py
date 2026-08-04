@@ -45,9 +45,7 @@ def test_manifest_digest_matches_the_committed_dataset() -> None:
     assert len(results) == 1
     assert results[0].status is ArtifactStatus.VERIFIED
     assert results[0].is_verified
-    assert require_verified_artifacts(manifest, _REPOSITORY_ROOT) == (
-        "data/raw/wow_6equj5.csv",
-    )
+    assert require_verified_artifacts(manifest, _REPOSITORY_ROOT) == ("data/raw/wow_6equj5.csv",)
 
 
 def test_normalized_csv_exactly_matches_the_typed_canonical_samples() -> None:
