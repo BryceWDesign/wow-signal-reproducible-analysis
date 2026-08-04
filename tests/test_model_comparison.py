@@ -16,10 +16,7 @@ _FAST_CONFIG = GaussianSearchConfig(
     refinement_rounds=3,
 )
 
-_TIMES = tuple(
-    Decimal(index * 12)
-    for index in range(6)
-)
+_TIMES = tuple(Decimal(index * 12) for index in range(6))
 
 _VALUES = (
     Decimal("6.5"),
@@ -43,20 +40,12 @@ def report() -> ModelComparisonReport:
 def test_report_evaluates_every_candidate_with_one_fold_per_sample(
     report: ModelComparisonReport,
 ) -> None:
-    assert {
-        result.model for result in report.results
-    } == set(CandidateModel)
+    assert {result.model for result in report.results} == set(CandidateModel)
+
+    assert all(len(result.folds) == 6 for result in report.results)
 
     assert all(
-        len(result.folds) == 6
-        for result in report.results
-    )
-
-    assert all(
-        tuple(
-            fold.held_out_index
-            for fold in result.folds
-        ) == tuple(range(6))
+        tuple(fold.held_out_index for fold in result.folds) == tuple(range(6))
         for result in report.results
     )
 
@@ -64,74 +53,46 @@ def test_report_evaluates_every_candidate_with_one_fold_per_sample(
 def test_gaussian_transit_has_the_lowest_held_out_error(
     report: ModelComparisonReport,
 ) -> None:
-    assert tuple(
-        result.model
-        for result in report.ranked_by_prediction_error
-    ) == (
+    assert tuple(result.model for result in report.ranked_by_prediction_error) == (
         CandidateModel.GAUSSIAN_TRANSIT,
         CandidateModel.QUADRATIC,
         CandidateModel.CONSTANT,
         CandidateModel.AFFINE,
     )
 
-    assert (
-        report.best_model.model
-        is CandidateModel.GAUSSIAN_TRANSIT
-    )
+    assert report.best_model.model is CandidateModel.GAUSSIAN_TRANSIT
 
 
 def test_canonical_cross_validation_errors_are_reproducible(
     report: ModelComparisonReport,
 ) -> None:
-    constant = report.result_for(
-        CandidateModel.CONSTANT
-    )
-    affine = report.result_for(
-        CandidateModel.AFFINE
-    )
-    quadratic = report.result_for(
-        CandidateModel.QUADRATIC
-    )
-    gaussian = report.result_for(
-        CandidateModel.GAUSSIAN_TRANSIT
-    )
+    constant = report.result_for(CandidateModel.CONSTANT)
+    affine = report.result_for(CandidateModel.AFFINE)
+    quadratic = report.result_for(CandidateModel.QUADRATIC)
+    gaussian = report.result_for(CandidateModel.GAUSSIAN_TRANSIT)
 
-    assert (
-        constant.root_mean_squared_prediction_error
-        == pytest.approx(
-            11.249889,
-            abs=0.000001,
-        )
+    assert constant.root_mean_squared_prediction_error == pytest.approx(
+        11.249889,
+        abs=0.000001,
     )
-    assert (
-        affine.root_mean_squared_prediction_error
-        == pytest.approx(
-            15.952504,
-            abs=0.000001,
-        )
+    assert affine.root_mean_squared_prediction_error == pytest.approx(
+        15.952504,
+        abs=0.000001,
     )
-    assert (
-        quadratic.root_mean_squared_prediction_error
-        == pytest.approx(
-            6.596274,
-            abs=0.000001,
-        )
+    assert quadratic.root_mean_squared_prediction_error == pytest.approx(
+        6.596274,
+        abs=0.000001,
     )
-    assert (
-        gaussian.root_mean_squared_prediction_error
-        == pytest.approx(
-            2.013396,
-            abs=0.000001,
-        )
+    assert gaussian.root_mean_squared_prediction_error == pytest.approx(
+        2.013396,
+        abs=0.000001,
     )
 
 
 def test_gaussian_held_out_predictions_are_reproducible(
     report: ModelComparisonReport,
 ) -> None:
-    gaussian = report.result_for(
-        CandidateModel.GAUSSIAN_TRANSIT
-    )
+    gaussian = report.result_for(CandidateModel.GAUSSIAN_TRANSIT)
 
     assert gaussian.predicted_snr == pytest.approx(
         (
@@ -149,9 +110,7 @@ def test_gaussian_held_out_predictions_are_reproducible(
 def test_quadratic_endpoint_extrapolation_is_retained_not_hidden(
     report: ModelComparisonReport,
 ) -> None:
-    quadratic = report.result_for(
-        CandidateModel.QUADRATIC
-    )
+    quadratic = report.result_for(CandidateModel.QUADRATIC)
 
     assert quadratic.predicted_snr[0] == pytest.approx(
         -6.7,
@@ -166,16 +125,12 @@ def test_quadratic_endpoint_extrapolation_is_retained_not_hidden(
 def test_rmse_ratio_quantifies_separation_from_the_best_model(
     report: ModelComparisonReport,
 ) -> None:
-    assert report.rmse_ratio_to_best(
-        CandidateModel.QUADRATIC
-    ) == pytest.approx(
+    assert report.rmse_ratio_to_best(CandidateModel.QUADRATIC) == pytest.approx(
         3.276194,
         abs=0.000001,
     )
 
-    assert report.rmse_ratio_to_best(
-        CandidateModel.AFFINE
-    ) == pytest.approx(
+    assert report.rmse_ratio_to_best(CandidateModel.AFFINE) == pytest.approx(
         7.923184,
         abs=0.000001,
     )
