@@ -57,21 +57,15 @@ class CrossValidationFold:
         if self.held_out_index < 0:
             raise ModelComparisonError("held_out_index must be non-negative")
         if not self.elapsed_seconds.is_finite() or self.elapsed_seconds < 0:
-            raise ModelComparisonError(
-                "elapsed_seconds must be non-negative and finite"
-            )
+            raise ModelComparisonError("elapsed_seconds must be non-negative and finite")
         if not self.observed_snr.is_finite() or self.observed_snr < 0:
-            raise ModelComparisonError(
-                "observed_snr must be non-negative and finite"
-            )
+            raise ModelComparisonError("observed_snr must be non-negative and finite")
         if not math.isfinite(self.predicted_snr):
             raise ModelComparisonError("predicted_snr must be finite")
         if not math.isfinite(self.residual_snr):
             raise ModelComparisonError("residual_snr must be finite")
         if not math.isfinite(self.squared_error) or self.squared_error < 0.0:
-            raise ModelComparisonError(
-                "squared_error must be non-negative and finite"
-            )
+            raise ModelComparisonError("squared_error must be non-negative and finite")
 
         expected_residual = float(self.observed_snr) - self.predicted_snr
         if not math.isclose(
@@ -80,18 +74,14 @@ class CrossValidationFold:
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise ModelComparisonError(
-                "residual_snr must equal observed_snr minus predicted_snr"
-            )
+            raise ModelComparisonError("residual_snr must equal observed_snr minus predicted_snr")
         if not math.isclose(
             self.squared_error,
             self.residual_snr**2,
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise ModelComparisonError(
-                "squared_error must equal residual_snr squared"
-            )
+            raise ModelComparisonError("squared_error must equal residual_snr squared")
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,17 +97,11 @@ class ModelCrossValidation:
 
     def __post_init__(self) -> None:
         if self.parameter_count != self.model.parameter_count:
-            raise ModelComparisonError(
-                "parameter_count does not match the candidate model"
-            )
+            raise ModelComparisonError("parameter_count does not match the candidate model")
         if not self.folds:
             raise ModelComparisonError("folds must not be empty")
-        if tuple(fold.held_out_index for fold in self.folds) != tuple(
-            range(len(self.folds))
-        ):
-            raise ModelComparisonError(
-                "fold indices must be contiguous and zero-based"
-            )
+        if tuple(fold.held_out_index for fold in self.folds) != tuple(range(len(self.folds))):
+            raise ModelComparisonError("fold indices must be contiguous and zero-based")
 
         for field_name in (
             "prediction_sum_squares",
@@ -126,9 +110,7 @@ class ModelCrossValidation:
         ):
             value = getattr(self, field_name)
             if not math.isfinite(value) or value < 0.0:
-                raise ModelComparisonError(
-                    f"{field_name} must be non-negative and finite"
-                )
+                raise ModelComparisonError(f"{field_name} must be non-negative and finite")
 
         expected_press = sum(fold.squared_error for fold in self.folds)
         if not math.isclose(
@@ -137,9 +119,7 @@ class ModelCrossValidation:
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise ModelComparisonError(
-                "prediction_sum_squares does not match fold errors"
-            )
+            raise ModelComparisonError("prediction_sum_squares does not match fold errors")
 
         expected_rmse = math.sqrt(expected_press / len(self.folds))
         if not math.isclose(
@@ -152,18 +132,14 @@ class ModelCrossValidation:
                 "root_mean_squared_prediction_error does not match fold errors"
             )
 
-        expected_mae = sum(
-            abs(fold.residual_snr) for fold in self.folds
-        ) / len(self.folds)
+        expected_mae = sum(abs(fold.residual_snr) for fold in self.folds) / len(self.folds)
         if not math.isclose(
             self.mean_absolute_prediction_error,
             expected_mae,
             rel_tol=1e-12,
             abs_tol=1e-12,
         ):
-            raise ModelComparisonError(
-                "mean_absolute_prediction_error does not match fold errors"
-            )
+            raise ModelComparisonError("mean_absolute_prediction_error does not match fold errors")
 
     @property
     def predicted_snr(self) -> tuple[float, ...]:
@@ -185,29 +161,18 @@ class ModelComparisonReport:
 
         expected_models = set(CandidateModel)
         actual_models = {result.model for result in self.results}
-        if (
-            actual_models != expected_models
-            or len(self.results) != len(expected_models)
-        ):
-            raise ModelComparisonError(
-                "results must contain each candidate model exactly once"
-            )
+        if actual_models != expected_models or len(self.results) != len(expected_models):
+            raise ModelComparisonError("results must contain each candidate model exactly once")
 
         for result in self.results:
             if len(result.folds) != len(self.observed_snr):
-                raise ModelComparisonError(
-                    "every model must contain one fold per observation"
-                )
+                raise ModelComparisonError("every model must contain one fold per observation")
 
             for index, fold in enumerate(result.folds):
                 if fold.elapsed_seconds != self.elapsed_seconds[index]:
-                    raise ModelComparisonError(
-                        "fold elapsed_seconds do not match report input"
-                    )
+                    raise ModelComparisonError("fold elapsed_seconds do not match report input")
                 if fold.observed_snr != self.observed_snr[index]:
-                    raise ModelComparisonError(
-                        "fold observed_snr values do not match report input"
-                    )
+                    raise ModelComparisonError("fold observed_snr values do not match report input")
 
     @property
     def ranked_by_prediction_error(
@@ -237,13 +202,10 @@ class ModelComparisonReport:
     ) -> ModelCrossValidation:
         """Return the unique result for one predeclared model."""
 
-        matches = tuple(
-            result for result in self.results if result.model is model
-        )
+        matches = tuple(result for result in self.results if result.model is model)
         if len(matches) != 1:
             raise ModelComparisonError(
-                f"expected one result for model {model.value!r}, "
-                f"found {len(matches)}"
+                f"expected one result for model {model.value!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -255,9 +217,7 @@ class ModelComparisonReport:
 
         best_rmse = self.best_model.root_mean_squared_prediction_error
         if best_rmse <= 0.0:
-            raise ModelComparisonError(
-                "best held-out RMSE must be positive"
-            )
+            raise ModelComparisonError("best held-out RMSE must be positive")
 
         result = self.result_for(model)
         return result.root_mean_squared_prediction_error / best_rmse
@@ -294,7 +254,9 @@ def compare_shape_models(
         observed_snr=observed,
         results=results,
     )
-  def _cross_validate_model(
+
+
+def _cross_validate_model(
     model: CandidateModel,
     elapsed_seconds: tuple[Decimal, ...],
     observed_snr: tuple[Decimal, ...],
@@ -305,14 +267,10 @@ def compare_shape_models(
 
     for held_out_index in range(len(observed_snr)):
         training_times = tuple(
-            value
-            for index, value in enumerate(elapsed_seconds)
-            if index != held_out_index
+            value for index, value in enumerate(elapsed_seconds) if index != held_out_index
         )
         training_observed = tuple(
-            value
-            for index, value in enumerate(observed_snr)
-            if index != held_out_index
+            value for index, value in enumerate(observed_snr) if index != held_out_index
         )
 
         predicted = _predict_held_out(
@@ -335,27 +293,17 @@ def compare_shape_models(
             )
         )
 
-    prediction_sum_squares = sum(
-        fold.squared_error for fold in folds
-    )
-    root_mean_squared_prediction_error = math.sqrt(
-        prediction_sum_squares / len(folds)
-    )
-    mean_absolute_prediction_error = sum(
-        abs(fold.residual_snr) for fold in folds
-    ) / len(folds)
+    prediction_sum_squares = sum(fold.squared_error for fold in folds)
+    root_mean_squared_prediction_error = math.sqrt(prediction_sum_squares / len(folds))
+    mean_absolute_prediction_error = sum(abs(fold.residual_snr) for fold in folds) / len(folds)
 
     return ModelCrossValidation(
         model=model,
         parameter_count=model.parameter_count,
         folds=tuple(folds),
         prediction_sum_squares=prediction_sum_squares,
-        root_mean_squared_prediction_error=(
-            root_mean_squared_prediction_error
-        ),
-        mean_absolute_prediction_error=(
-            mean_absolute_prediction_error
-        ),
+        root_mean_squared_prediction_error=(root_mean_squared_prediction_error),
+        mean_absolute_prediction_error=(mean_absolute_prediction_error),
     )
 
 
@@ -368,9 +316,7 @@ def _predict_held_out(
     gaussian_config: GaussianSearchConfig | None,
 ) -> float:
     if model is CandidateModel.CONSTANT:
-        return sum(
-            float(value) for value in training_observed
-        ) / len(training_observed)
+        return sum(float(value) for value in training_observed) / len(training_observed)
 
     if model is CandidateModel.AFFINE:
         return _polynomial_prediction(
@@ -404,13 +350,9 @@ def _polynomial_prediction(
     degree: int,
 ) -> float:
     if degree not in {1, 2}:
-        raise ModelComparisonError(
-            "polynomial degree must be 1 or 2"
-        )
+        raise ModelComparisonError("polynomial degree must be 1 or 2")
     if len(training_times) < degree + 1:
-        raise ModelComparisonError(
-            "insufficient training observations for polynomial degree"
-        )
+        raise ModelComparisonError("insufficient training observations for polynomial degree")
 
     times = tuple(float(value) for value in training_times)
     observed = tuple(float(value) for value in training_observed)
@@ -418,24 +360,14 @@ def _polynomial_prediction(
     center = sum(times) / len(times)
     scale = max(abs(value - center) for value in times)
     if scale <= 0.0 or not math.isfinite(scale):
-        raise ModelComparisonError(
-            "training times do not span a finite interval"
-        )
+        raise ModelComparisonError("training times do not span a finite interval")
 
-    normalized_times = tuple(
-        (value - center) / scale for value in times
-    )
+    normalized_times = tuple((value - center) / scale for value in times)
     target = (float(target_time) - center) / scale
     size = degree + 1
 
     matrix = [
-        [
-            sum(
-                value ** (row + column)
-                for value in normalized_times
-            )
-            for column in range(size)
-        ]
+        [sum(value ** (row + column) for value in normalized_times) for column in range(size)]
         for row in range(size)
     ]
 
@@ -456,14 +388,9 @@ def _polynomial_prediction(
         right_hand_side,
     )
 
-    prediction = sum(
-        coefficient * target**power
-        for power, coefficient in enumerate(coefficients)
-    )
+    prediction = sum(coefficient * target**power for power, coefficient in enumerate(coefficients))
     if not math.isfinite(prediction):
-        raise ModelComparisonError(
-            "polynomial prediction must be finite"
-        )
+        raise ModelComparisonError("polynomial prediction must be finite")
 
     return prediction
 
@@ -475,32 +402,21 @@ def _solve_linear_system(
     size = len(matrix)
 
     if size == 0 or len(right_hand_side) != size:
-        raise ModelComparisonError(
-            "linear system dimensions are invalid"
-        )
+        raise ModelComparisonError("linear system dimensions are invalid")
     if any(len(row) != size for row in matrix):
-        raise ModelComparisonError(
-            "linear system matrix must be square"
-        )
+        raise ModelComparisonError("linear system matrix must be square")
 
-    augmented = [
-        [*row, right_hand_side[index]]
-        for index, row in enumerate(matrix)
-    ]
+    augmented = [[*row, right_hand_side[index]] for index, row in enumerate(matrix)]
 
     for column in range(size):
         pivot_row = max(
             range(column, size),
-            key=lambda row_index: abs(
-                augmented[row_index][column]
-            ),
+            key=lambda row_index: abs(augmented[row_index][column]),
         )
         pivot_value = augmented[pivot_row][column]
 
         if abs(pivot_value) <= _SINGULAR_TOLERANCE:
-            raise ModelComparisonError(
-                "linear system is singular"
-            )
+            raise ModelComparisonError("linear system is singular")
 
         augmented[column], augmented[pivot_row] = (
             augmented[pivot_row],
@@ -517,17 +433,11 @@ def _solve_linear_system(
 
             factor = augmented[row_index][column]
             for index in range(column, size + 1):
-                augmented[row_index][index] -= (
-                    factor * augmented[column][index]
-                )
+                augmented[row_index][index] -= factor * augmented[column][index]
 
-    solution = tuple(
-        augmented[index][-1] for index in range(size)
-    )
+    solution = tuple(augmented[index][-1] for index in range(size))
     if any(not math.isfinite(value) for value in solution):
-        raise ModelComparisonError(
-            "linear system solution must be finite"
-        )
+        raise ModelComparisonError("linear system solution must be finite")
 
     return solution
 
@@ -537,35 +447,14 @@ def _validate_series(
     observed_snr: tuple[Decimal, ...],
 ) -> None:
     if len(elapsed_seconds) != len(observed_snr):
-        raise ModelComparisonError(
-            "elapsed_seconds and observed_snr must have equal length"
-        )
+        raise ModelComparisonError("elapsed_seconds and observed_snr must have equal length")
     if len(elapsed_seconds) < _MINIMUM_OBSERVATIONS:
-        raise ModelComparisonError(
-            "at least four observations are required"
-        )
-    if any(
-        not value.is_finite() or value < 0
-        for value in elapsed_seconds
-    ):
-        raise ModelComparisonError(
-            "elapsed_seconds must be non-negative and finite"
-        )
-    if any(
-        current <= previous
-        for previous, current in pairwise(elapsed_seconds)
-    ):
-        raise ModelComparisonError(
-            "elapsed_seconds must be strictly increasing"
-        )
-    if any(
-        not value.is_finite() or value < 0
-        for value in observed_snr
-    ):
-        raise ModelComparisonError(
-            "observed_snr must be non-negative and finite"
-        )
+        raise ModelComparisonError("at least four observations are required")
+    if any(not value.is_finite() or value < 0 for value in elapsed_seconds):
+        raise ModelComparisonError("elapsed_seconds must be non-negative and finite")
+    if any(current <= previous for previous, current in pairwise(elapsed_seconds)):
+        raise ModelComparisonError("elapsed_seconds must be strictly increasing")
+    if any(not value.is_finite() or value < 0 for value in observed_snr):
+        raise ModelComparisonError("observed_snr must be non-negative and finite")
     if len(set(observed_snr)) == 1:
-        raise ModelComparisonError(
-            "observed_snr values must not all be equal"
-        )
+        raise ModelComparisonError("observed_snr values must not all be equal")
