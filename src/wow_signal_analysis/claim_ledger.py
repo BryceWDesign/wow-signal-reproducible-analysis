@@ -17,12 +17,8 @@ from wow_signal_analysis.provenance import (
     require_verified_artifacts,
 )
 
-CLAIM_LEDGER_REFERENCE_PATH: Final = PurePosixPath(
-    "data/reference/claim_ledger.json"
-)
-CLAIM_LEDGER_MANIFEST_PATH: Final = PurePosixPath(
-    "data/provenance/claim_source_manifest.json"
-)
+CLAIM_LEDGER_REFERENCE_PATH: Final = PurePosixPath("data/reference/claim_ledger.json")
+CLAIM_LEDGER_MANIFEST_PATH: Final = PurePosixPath("data/provenance/claim_source_manifest.json")
 
 _IDENTIFIER_PATTERN: Final = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -114,9 +110,7 @@ class EvidenceRecord:
         if self.kind is EvidenceKind.SOURCE:
             parsed = urlparse(self.locator)
             if parsed.scheme != "https" or not parsed.netloc:
-                raise ClaimLedgerError(
-                    "source evidence locator must be an absolute HTTPS URL"
-                )
+                raise ClaimLedgerError("source evidence locator must be an absolute HTTPS URL")
         elif self.kind is EvidenceKind.ANALYSIS:
             if ":" not in self.locator:
                 raise ClaimLedgerError(
@@ -125,9 +119,7 @@ class EvidenceRecord:
         else:
             path = PurePosixPath(self.locator)
             if path.is_absolute() or ".." in path.parts:
-                raise ClaimLedgerError(
-                    "dataset and standard locators must be safe relative paths"
-                )
+                raise ClaimLedgerError("dataset and standard locators must be safe relative paths")
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,9 +161,7 @@ class ClaimRecord:
         if not self.limitations:
             raise ClaimLedgerError("claim limitations must not be empty")
         if any(not limitation.strip() for limitation in self.limitations):
-            raise ClaimLedgerError(
-                "claim limitations must contain only non-empty strings"
-            )
+            raise ClaimLedgerError("claim limitations must contain only non-empty strings")
         if len(set(self.limitations)) != len(self.limitations):
             raise ClaimLedgerError("claim limitations must be unique")
 
@@ -218,19 +208,15 @@ class ClaimLedger:
             )
             if unknown_evidence:
                 raise ClaimLedgerError(
-                    f"claim {claim.claim_id!r} references unknown evidence: "
-                    f"{unknown_evidence}"
+                    f"claim {claim.claim_id!r} references unknown evidence: {unknown_evidence}"
                 )
 
             unknown_dependencies = tuple(
-                dependency
-                for dependency in claim.depends_on
-                if dependency not in claim_id_set
+                dependency for dependency in claim.depends_on if dependency not in claim_id_set
             )
             if unknown_dependencies:
                 raise ClaimLedgerError(
-                    f"claim {claim.claim_id!r} references unknown claims: "
-                    f"{unknown_dependencies}"
+                    f"claim {claim.claim_id!r} references unknown claims: {unknown_dependencies}"
                 )
 
             allowed_classes = _ALLOWED_DEPENDENCY_CLASSES[claim.classification]
@@ -271,28 +257,20 @@ class ClaimLedger:
     def evidence_by_id(self, evidence_id: str) -> EvidenceRecord:
         """Return one unique evidence record."""
 
-        matches = tuple(
-            record
-            for record in self.evidence
-            if record.evidence_id == evidence_id
-        )
+        matches = tuple(record for record in self.evidence if record.evidence_id == evidence_id)
         if len(matches) != 1:
             raise ClaimLedgerError(
-                f"expected one evidence record for {evidence_id!r}, "
-                f"found {len(matches)}"
+                f"expected one evidence record for {evidence_id!r}, found {len(matches)}"
             )
         return matches[0]
 
     def claim_by_id(self, claim_id: str) -> ClaimRecord:
         """Return one unique claim record."""
 
-        matches = tuple(
-            claim for claim in self.claims if claim.claim_id == claim_id
-        )
+        matches = tuple(claim for claim in self.claims if claim.claim_id == claim_id)
         if len(matches) != 1:
             raise ClaimLedgerError(
-                f"expected one claim record for {claim_id!r}, "
-                f"found {len(matches)}"
+                f"expected one claim record for {claim_id!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -302,11 +280,7 @@ class ClaimLedger:
     ) -> tuple[ClaimRecord, ...]:
         """Return claims in ledger order for one evidence class."""
 
-        return tuple(
-            claim
-            for claim in self.claims
-            if claim.classification is classification
-        )
+        return tuple(claim for claim in self.claims if claim.classification is classification)
 
     def claims_by_verdict(
         self,
@@ -314,9 +288,7 @@ class ClaimLedger:
     ) -> tuple[ClaimRecord, ...]:
         """Return claims in ledger order for one reporting verdict."""
 
-        return tuple(
-            claim for claim in self.claims if claim.verdict is verdict
-        )
+        return tuple(claim for claim in self.claims if claim.verdict is verdict)
 
 
 def load_claim_ledger(path: Path) -> ClaimLedger:
@@ -362,14 +334,11 @@ def load_verified_claim_ledger(
     require_verified_artifacts(manifest, root)
 
     matches = tuple(
-        artifact
-        for artifact in manifest.artifacts
-        if artifact.path == str(ledger_path)
+        artifact for artifact in manifest.artifacts if artifact.path == str(ledger_path)
     )
     if len(matches) != 1:
         raise ProvenanceError(
-            f"expected one manifest artifact for {ledger_path}, "
-            f"found {len(matches)}"
+            f"expected one manifest artifact for {ledger_path}, found {len(matches)}"
         )
 
     ledger = load_claim_ledger(root / ledger_path)
@@ -384,14 +353,12 @@ def load_verified_claim_ledger(
         sorted(
             record.locator
             for record in ledger.evidence
-            if record.kind is EvidenceKind.SOURCE
-            and record.locator not in manifest_source_urls
+            if record.kind is EvidenceKind.SOURCE and record.locator not in manifest_source_urls
         )
     )
     if undeclared_urls:
         raise ProvenanceError(
-            "claim ledger references source URLs absent from the manifest: "
-            f"{undeclared_urls}"
+            f"claim ledger references source URLs absent from the manifest: {undeclared_urls}"
         )
 
     return ledger
@@ -402,9 +369,7 @@ def _evidence_from_mapping(value: Mapping[str, object]) -> EvidenceRecord:
     try:
         kind = EvidenceKind(kind_text)
     except ValueError as error:
-        raise ClaimLedgerError(
-            f"unsupported evidence kind: {kind_text!r}"
-        ) from error
+        raise ClaimLedgerError(f"unsupported evidence kind: {kind_text!r}") from error
 
     return EvidenceRecord(
         evidence_id=_required_text(value, "evidence_id"),
@@ -428,9 +393,7 @@ def _claim_from_mapping(value: Mapping[str, object]) -> ClaimRecord:
     try:
         verdict = ClaimVerdict(verdict_text)
     except ValueError as error:
-        raise ClaimLedgerError(
-            f"unsupported claim verdict: {verdict_text!r}"
-        ) from error
+        raise ClaimLedgerError(f"unsupported claim verdict: {verdict_text!r}") from error
 
     return ClaimRecord(
         claim_id=_required_text(value, "claim_id"),
@@ -452,9 +415,7 @@ def _require_acyclic_claim_graph(claims: tuple[ClaimRecord, ...]) -> None:
         if claim_id in visited:
             return
         if claim_id in visiting:
-            raise ClaimLedgerError(
-                f"claim dependency graph contains a cycle at {claim_id!r}"
-            )
+            raise ClaimLedgerError(f"claim dependency graph contains a cycle at {claim_id!r}")
 
         visiting.add(claim_id)
         for dependency_id in by_id[claim_id].depends_on:
@@ -468,9 +429,7 @@ def _require_acyclic_claim_graph(claims: tuple[ClaimRecord, ...]) -> None:
 
 def _require_identifier(value: str, field_name: str) -> None:
     if not _IDENTIFIER_PATTERN.fullmatch(value):
-        raise ClaimLedgerError(
-            f"{field_name} must be a lowercase hyphen-delimited identifier"
-        )
+        raise ClaimLedgerError(f"{field_name} must be a lowercase hyphen-delimited identifier")
 
 
 def _require_unique_identifiers(
@@ -531,7 +490,5 @@ def _required_text_tuple(
 ) -> tuple[str, ...]:
     items = _required_list(value, field_name)
     if any(not isinstance(item, str) or not item.strip() for item in items):
-        raise ClaimLedgerError(
-            f"{field_name} must contain only non-empty strings"
-        )
+        raise ClaimLedgerError(f"{field_name} must contain only non-empty strings")
     return tuple(cast(str, item) for item in items)
