@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import csv
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from itertools import pairwise
@@ -130,7 +130,7 @@ def load_verified_wow_dataset(
     return dataset
 
 
-def _validate_header(fieldnames: list[str] | None) -> None:
+def _validate_header(fieldnames: Sequence[str] | None) -> None:
     if fieldnames is None:
         raise DatasetError("observation dataset is missing a CSV header")
     actual = tuple(fieldnames)
