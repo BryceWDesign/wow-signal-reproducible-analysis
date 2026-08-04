@@ -85,19 +85,13 @@ class RepositoryContractReport:
 
     def __post_init__(self) -> None:
         if not self.repository_root.is_absolute():
-            raise RepositoryContractError(
-                "repository_root must be an absolute path"
-            )
+            raise RepositoryContractError("repository_root must be an absolute path")
 
         if self.printer_sequence != WOW_PRINTER_SEQUENCE:
-            raise RepositoryContractError(
-                f"printer_sequence must be {WOW_PRINTER_SEQUENCE!r}"
-            )
+            raise RepositoryContractError(f"printer_sequence must be {WOW_PRINTER_SEQUENCE!r}")
 
         if self.morse_standard_id != MORSE_STANDARD_ID:
-            raise RepositoryContractError(
-                f"morse_standard_id must be {MORSE_STANDARD_ID!r}"
-            )
+            raise RepositoryContractError(f"morse_standard_id must be {MORSE_STANDARD_ID!r}")
 
         for field_name in ("claim_ledger_id", "hypothesis_matrix_id"):
             value = getattr(self, field_name)
@@ -106,22 +100,15 @@ class RepositoryContractReport:
                     f"{field_name} must be a lowercase hyphen-delimited identifier"
                 )
 
-        component_ids = tuple(
-            component.component_id for component in self.components
-        )
+        component_ids = tuple(component.component_id for component in self.components)
         if component_ids != _EXPECTED_COMPONENT_IDS:
             raise RepositoryContractError(
-                "components must contain the canonical repository contract "
-                "in its declared order"
+                "components must contain the canonical repository contract in its declared order"
             )
 
-        artifact_paths = tuple(
-            component.artifact_path for component in self.components
-        )
+        artifact_paths = tuple(component.artifact_path for component in self.components)
         if len(set(artifact_paths)) != len(artifact_paths):
-            raise RepositoryContractError(
-                "component artifact paths must be unique"
-            )
+            raise RepositoryContractError("component artifact paths must be unique")
 
     @property
     def verified_component_count(self) -> int:
@@ -139,14 +126,11 @@ class RepositoryContractReport:
         """Return one unique verified component."""
 
         matches = tuple(
-            component
-            for component in self.components
-            if component.component_id == component_id
+            component for component in self.components if component.component_id == component_id
         )
         if len(matches) != 1:
             raise RepositoryContractError(
-                f"expected one component for {component_id!r}, "
-                f"found {len(matches)}"
+                f"expected one component for {component_id!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -164,9 +148,7 @@ def verify_repository_contract(
 
     root = repository_root.resolve()
     if not root.is_dir():
-        raise RepositoryContractError(
-            f"repository_root must be an existing directory: {root}"
-        )
+        raise RepositoryContractError(f"repository_root must be an existing directory: {root}")
 
     dataset = load_verified_wow_dataset(root)
     morse_registry = load_verified_morse_registry(root)
@@ -178,9 +160,7 @@ def verify_repository_contract(
     )
 
     if hypothesis_matrix.ledger_id != claim_ledger.ledger_id:
-        raise RepositoryContractError(
-            "hypothesis matrix is not bound to the verified claim ledger"
-        )
+        raise RepositoryContractError("hypothesis matrix is not bound to the verified claim ledger")
 
     return RepositoryContractReport(
         repository_root=root,
