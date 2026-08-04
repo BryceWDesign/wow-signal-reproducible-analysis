@@ -23,9 +23,7 @@ from wow_signal_analysis.provenance import (
     require_verified_artifacts,
 )
 
-HYPOTHESIS_MATRIX_REFERENCE_PATH: Final = PurePosixPath(
-    "data/reference/hypothesis_matrix.json"
-)
+HYPOTHESIS_MATRIX_REFERENCE_PATH: Final = PurePosixPath("data/reference/hypothesis_matrix.json")
 HYPOTHESIS_MATRIX_MANIFEST_PATH: Final = PurePosixPath(
     "data/provenance/hypothesis_source_manifest.json"
 )
@@ -56,9 +54,7 @@ class HypothesisStatus(StrEnum):
 
 
 _ALLOWED_STATUS_BY_SCOPE: Final = {
-    HypothesisScope.SHAPE_MODEL: frozenset(
-        {HypothesisStatus.SUPPORTED_AS_MODEL}
-    ),
+    HypothesisScope.SHAPE_MODEL: frozenset({HypothesisStatus.SUPPORTED_AS_MODEL}),
     HypothesisScope.SOURCE_FUNCTION: frozenset(
         {
             HypothesisStatus.COMPATIBLE_NOT_PROVEN,
@@ -71,9 +67,7 @@ _ALLOWED_STATUS_BY_SCOPE: Final = {
             HypothesisStatus.NOT_ESTABLISHED,
         }
     ),
-    HypothesisScope.SYMBOLIC_INTENT: frozenset(
-        {HypothesisStatus.NOT_ESTABLISHED}
-    ),
+    HypothesisScope.SYMBOLIC_INTENT: frozenset({HypothesisStatus.NOT_ESTABLISHED}),
 }
 
 
@@ -101,8 +95,7 @@ class HypothesisRecord:
 
         if self.status not in _ALLOWED_STATUS_BY_SCOPE[self.scope]:
             raise HypothesisMatrixError(
-                f"scope {self.scope.value!r} does not permit status "
-                f"{self.status.value!r}"
+                f"scope {self.scope.value!r} does not permit status {self.status.value!r}"
             )
 
         _require_unique_identifiers(self.claim_ids, "claim_ids")
@@ -129,20 +122,14 @@ class HypothesisMatrix:
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise HypothesisMatrixError(
-                "unsupported hypothesis matrix schema_version"
-            )
+            raise HypothesisMatrixError("unsupported hypothesis matrix schema_version")
         _require_identifier(self.matrix_id, "matrix_id")
         if not self.title.strip() or not self.scope_note.strip():
             raise HypothesisMatrixError("title and scope_note must be non-empty")
         if not self.hypotheses:
-            raise HypothesisMatrixError(
-                "hypothesis matrix must contain at least one hypothesis"
-            )
+            raise HypothesisMatrixError("hypothesis matrix must contain at least one hypothesis")
 
-        hypothesis_ids = tuple(
-            hypothesis.hypothesis_id for hypothesis in self.hypotheses
-        )
+        hypothesis_ids = tuple(hypothesis.hypothesis_id for hypothesis in self.hypotheses)
         if len(set(hypothesis_ids)) != len(hypothesis_ids):
             raise HypothesisMatrixError("hypothesis IDs must be unique")
 
@@ -156,8 +143,7 @@ class HypothesisMatrix:
         )
         if len(matches) != 1:
             raise HypothesisMatrixError(
-                f"expected one hypothesis for {hypothesis_id!r}, "
-                f"found {len(matches)}"
+                f"expected one hypothesis for {hypothesis_id!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -167,11 +153,7 @@ class HypothesisMatrix:
     ) -> tuple[HypothesisRecord, ...]:
         """Return hypotheses in source order for one question layer."""
 
-        return tuple(
-            hypothesis
-            for hypothesis in self.hypotheses
-            if hypothesis.scope is scope
-        )
+        return tuple(hypothesis for hypothesis in self.hypotheses if hypothesis.scope is scope)
 
     def hypotheses_by_status(
         self,
@@ -179,11 +161,7 @@ class HypothesisMatrix:
     ) -> tuple[HypothesisRecord, ...]:
         """Return hypotheses in source order for one evidence status."""
 
-        return tuple(
-            hypothesis
-            for hypothesis in self.hypotheses
-            if hypothesis.status is status
-        )
+        return tuple(hypothesis for hypothesis in self.hypotheses if hypothesis.status is status)
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,9 +173,7 @@ class BoundHypothesis:
 
     def __post_init__(self) -> None:
         if tuple(claim.claim_id for claim in self.claims) != self.record.claim_ids:
-            raise HypothesisMatrixError(
-                "bound claims must preserve the hypothesis claim_ids order"
-            )
+            raise HypothesisMatrixError("bound claims must preserve the hypothesis claim_ids order")
         _validate_status_basis(self.record.status, self.claims)
 
     @property
@@ -225,17 +201,11 @@ class BoundHypothesisMatrix:
         _require_identifier(self.matrix_id, "matrix_id")
         _require_identifier(self.ledger_id, "ledger_id")
         if not self.hypotheses:
-            raise HypothesisMatrixError(
-                "bound hypothesis matrix must contain hypotheses"
-            )
+            raise HypothesisMatrixError("bound hypothesis matrix must contain hypotheses")
 
-        hypothesis_ids = tuple(
-            hypothesis.record.hypothesis_id for hypothesis in self.hypotheses
-        )
+        hypothesis_ids = tuple(hypothesis.record.hypothesis_id for hypothesis in self.hypotheses)
         if len(set(hypothesis_ids)) != len(hypothesis_ids):
-            raise HypothesisMatrixError(
-                "bound hypothesis IDs must be unique"
-            )
+            raise HypothesisMatrixError("bound hypothesis IDs must be unique")
 
     def hypothesis_by_id(self, hypothesis_id: str) -> BoundHypothesis:
         """Return one unique evidence-bound hypothesis."""
@@ -247,8 +217,7 @@ class BoundHypothesisMatrix:
         )
         if len(matches) != 1:
             raise HypothesisMatrixError(
-                f"expected one bound hypothesis for {hypothesis_id!r}, "
-                f"found {len(matches)}"
+                f"expected one bound hypothesis for {hypothesis_id!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -259,9 +228,7 @@ class BoundHypothesisMatrix:
         """Return bound hypotheses carrying one evidence status."""
 
         return tuple(
-            hypothesis
-            for hypothesis in self.hypotheses
-            if hypothesis.record.status is status
+            hypothesis for hypothesis in self.hypotheses if hypothesis.record.status is status
         )
 
 
@@ -271,19 +238,13 @@ def load_hypothesis_matrix(path: Path) -> HypothesisMatrix:
     try:
         payload: object = json.loads(path.read_text(encoding="utf-8"))
     except OSError as error:
-        raise HypothesisMatrixError(
-            f"unable to read hypothesis matrix: {path}"
-        ) from error
+        raise HypothesisMatrixError(f"unable to read hypothesis matrix: {path}") from error
     except json.JSONDecodeError as error:
-        raise HypothesisMatrixError(
-            f"invalid hypothesis matrix JSON: {path}"
-        ) from error
+        raise HypothesisMatrixError(f"invalid hypothesis matrix JSON: {path}") from error
 
     root = _require_mapping(payload, "hypothesis matrix")
     hypotheses = tuple(
-        _hypothesis_from_mapping(
-            _require_mapping(item, "hypothesis record")
-        )
+        _hypothesis_from_mapping(_require_mapping(item, "hypothesis record"))
         for item in _required_list(root, "hypotheses")
     )
 
@@ -304,13 +265,8 @@ def bind_hypothesis_matrix(
 
     bound_hypotheses: list[BoundHypothesis] = []
     for hypothesis in matrix.hypotheses:
-        claims = tuple(
-            claim_ledger.claim_by_id(claim_id)
-            for claim_id in hypothesis.claim_ids
-        )
-        bound_hypotheses.append(
-            BoundHypothesis(record=hypothesis, claims=claims)
-        )
+        claims = tuple(claim_ledger.claim_by_id(claim_id) for claim_id in hypothesis.claim_ids)
+        bound_hypotheses.append(BoundHypothesis(record=hypothesis, claims=claims))
 
     return BoundHypothesisMatrix(
         matrix_id=matrix.matrix_id,
@@ -333,14 +289,11 @@ def load_verified_hypothesis_matrix(
     require_verified_artifacts(manifest, root)
 
     matches = tuple(
-        artifact
-        for artifact in manifest.artifacts
-        if artifact.path == str(matrix_path)
+        artifact for artifact in manifest.artifacts if artifact.path == str(matrix_path)
     )
     if len(matches) != 1:
         raise ProvenanceError(
-            f"expected one manifest artifact for {matrix_path}, "
-            f"found {len(matches)}"
+            f"expected one manifest artifact for {matrix_path}, found {len(matches)}"
         )
 
     matrix = load_hypothesis_matrix(root / matrix_path)
@@ -360,14 +313,9 @@ def _validate_status_basis(
     claims: tuple[ClaimRecord, ...],
 ) -> None:
     if not claims:
-        raise HypothesisMatrixError(
-            "hypothesis status basis must contain at least one claim"
-        )
+        raise HypothesisMatrixError("hypothesis status basis must contain at least one claim")
 
-    basis = {
-        (claim.classification, claim.verdict)
-        for claim in claims
-    }
+    basis = {(claim.classification, claim.verdict) for claim in claims}
     derived_reproducible = (
         ClaimClassification.DERIVED,
         ClaimVerdict.REPRODUCIBLE,
@@ -383,9 +331,7 @@ def _validate_status_basis(
 
     if status is HypothesisStatus.SUPPORTED_AS_MODEL:
         if derived_reproducible not in basis:
-            raise HypothesisMatrixError(
-                "supported-as-model requires a reproducible derived claim"
-            )
+            raise HypothesisMatrixError("supported-as-model requires a reproducible derived claim")
         if any(
             claim.classification
             not in {
@@ -416,15 +362,12 @@ def _validate_status_basis(
         }
         if not required.issubset(basis):
             raise HypothesisMatrixError(
-                "not-discriminated requires derived, compatibility, "
-                "and speculative claim bases"
+                "not-discriminated requires derived, compatibility, and speculative claim bases"
             )
         return
 
     if speculative_basis not in basis:
-        raise HypothesisMatrixError(
-            "not-established requires a not-established speculative claim"
-        )
+        raise HypothesisMatrixError("not-established requires a not-established speculative claim")
 
 
 def _hypothesis_from_mapping(
@@ -436,16 +379,12 @@ def _hypothesis_from_mapping(
     try:
         scope = HypothesisScope(scope_text)
     except ValueError as error:
-        raise HypothesisMatrixError(
-            f"unsupported hypothesis scope: {scope_text!r}"
-        ) from error
+        raise HypothesisMatrixError(f"unsupported hypothesis scope: {scope_text!r}") from error
 
     try:
         status = HypothesisStatus(status_text)
     except ValueError as error:
-        raise HypothesisMatrixError(
-            f"unsupported hypothesis status: {status_text!r}"
-        ) from error
+        raise HypothesisMatrixError(f"unsupported hypothesis status: {status_text!r}") from error
 
     return HypothesisRecord(
         hypothesis_id=_required_text(value, "hypothesis_id"),
@@ -463,9 +402,7 @@ def _hypothesis_from_mapping(
 
 def _require_identifier(value: str, field_name: str) -> None:
     if not _IDENTIFIER_PATTERN.fullmatch(value):
-        raise HypothesisMatrixError(
-            f"{field_name} must be a lowercase hyphen-delimited identifier"
-        )
+        raise HypothesisMatrixError(f"{field_name} must be a lowercase hyphen-delimited identifier")
 
 
 def _require_unique_identifiers(
@@ -487,9 +424,7 @@ def _require_nonempty_unique_text(
     if not values:
         raise HypothesisMatrixError(f"{field_name} must not be empty")
     if any(not value.strip() for value in values):
-        raise HypothesisMatrixError(
-            f"{field_name} must contain only non-empty strings"
-        )
+        raise HypothesisMatrixError(f"{field_name} must contain only non-empty strings")
     if len(set(values)) != len(values):
         raise HypothesisMatrixError(f"{field_name} must contain unique values")
 
@@ -538,7 +473,5 @@ def _required_text_tuple(
 ) -> tuple[str, ...]:
     items = _required_list(value, field_name)
     if any(not isinstance(item, str) or not item.strip() for item in items):
-        raise HypothesisMatrixError(
-            f"{field_name} must contain only non-empty strings"
-        )
+        raise HypothesisMatrixError(f"{field_name} must contain only non-empty strings")
     return tuple(cast(str, item) for item in items)
