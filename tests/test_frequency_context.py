@@ -32,9 +32,7 @@ def test_verified_context_preserves_sourced_frequency_records() -> None:
     assert context.rest_line.line_id == "neutral-hydrogen-21cm"
     assert context.rest_line.species == "neutral atomic hydrogen (H I)"
     assert context.rest_line.rest_frequency_mhz == Decimal("1420.405752")
-    assert tuple(
-        estimate.estimate_id for estimate in context.estimates
-    ) == (
+    assert tuple(estimate.estimate_id for estimate in context.estimates) == (
         "ehman-historical-2008",
         "mendez-et-al-2025-v1",
     )
@@ -48,9 +46,7 @@ def test_historical_frequency_offset_is_computed_exactly() -> None:
     assert offset.absolute_offset_khz == Decimal("49.848000")
     assert offset.uncertainty_khz == Decimal("5.000")
     assert offset.relative_offset_ppm == (
-        Decimal("0.049848")
-        / Decimal("1420.405752")
-        * Decimal("1000000")
+        Decimal("0.049848") / Decimal("1420.405752") * Decimal("1000000")
     )
     assert not offset.uncertainty_interval_contains_rest
 
@@ -68,14 +64,8 @@ def test_recalibrated_frequency_offset_is_computed_exactly() -> None:
 def test_context_keeps_historical_analysis_and_preprint_status_distinct() -> None:
     context = load_frequency_context(_REFERENCE_PATH)
 
-    assert (
-        context.estimates[0].status
-        is FrequencyEstimateStatus.HISTORICAL_ANALYSIS
-    )
-    assert (
-        context.estimates[1].status
-        is FrequencyEstimateStatus.RESEARCH_PREPRINT
-    )
+    assert context.estimates[0].status is FrequencyEstimateStatus.HISTORICAL_ANALYSIS
+    assert context.estimates[1].status is FrequencyEstimateStatus.RESEARCH_PREPRINT
 
 
 def test_offset_window_is_explicit_and_not_embedded_as_a_near_line_claim() -> None:
@@ -83,16 +73,10 @@ def test_offset_window_is_explicit_and_not_embedded_as_a_near_line_claim() -> No
 
     assert context.estimates_within_offset(Decimal("49.847")) == ()
     assert tuple(
-        estimate.estimate_id
-        for estimate in context.estimates_within_offset(
-            Decimal("49.848")
-        )
+        estimate.estimate_id for estimate in context.estimates_within_offset(Decimal("49.848"))
     ) == ("ehman-historical-2008",)
     assert tuple(
-        estimate.estimate_id
-        for estimate in context.estimates_within_offset(
-            Decimal("320.248")
-        )
+        estimate.estimate_id for estimate in context.estimates_within_offset(Decimal("320.248"))
     ) == (
         "ehman-historical-2008",
         "mendez-et-al-2025-v1",
@@ -131,9 +115,7 @@ def test_loader_rejects_invalid_json_and_unknown_status(
     ):
         load_frequency_context(invalid_json)
 
-    payload = json.loads(
-        _REFERENCE_PATH.read_text(encoding="utf-8")
-    )
+    payload = json.loads(_REFERENCE_PATH.read_text(encoding="utf-8"))
     payload["wow_frequency_estimates"][0]["status"] = "peer-reviewed"
 
     unknown_status = tmp_path / "unknown-status.json"
@@ -201,9 +183,7 @@ def test_verified_loader_detects_reference_tampering(
     manifest_target.parent.mkdir(parents=True)
     reference_target.parent.mkdir(parents=True)
 
-    manifest_target.write_bytes(
-        (_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_bytes()
-    )
+    manifest_target.write_bytes((_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_bytes())
     reference_target.write_text(
         _REFERENCE_PATH.read_text(encoding="utf-8") + "\n",
         encoding="utf-8",
@@ -226,9 +206,7 @@ def test_verified_loader_rejects_source_ids_absent_from_manifest(
     reference_target.parent.mkdir(parents=True)
 
     manifest_payload = json.loads(
-        (_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_text(
-            encoding="utf-8"
-        )
+        (_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_text(encoding="utf-8")
     )
     manifest_payload["sources"] = manifest_payload["sources"][:-1]
 
@@ -255,9 +233,7 @@ def test_verified_loader_rejects_manifest_record_count_drift(
     reference_target.parent.mkdir(parents=True)
 
     manifest_payload = json.loads(
-        (_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_text(
-            encoding="utf-8"
-        )
+        (_REPOSITORY_ROOT / FREQUENCY_MANIFEST_PATH).read_text(encoding="utf-8")
     )
     manifest_payload["artifacts"][0]["record_count"] = 2
 
