@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -27,27 +28,16 @@ def test_verified_registry_matches_the_in_force_itu_reference() -> None:
 
     assert registry.schema_version == 1
     assert registry.standard_id == MORSE_STANDARD_ID
-    assert registry.source_url == (
-        "https://www.itu.int/rec/R-REC-M.1677-1-200910-I/en"
-    )
+    assert registry.source_url == ("https://www.itu.int/rec/R-REC-M.1677-1-200910-I/en")
     assert len(registry.symbols) == 51
 
 
 def test_registry_category_counts_are_complete_for_its_declared_scope() -> None:
     registry = load_morse_registry(_REFERENCE_PATH)
 
-    assert sum(
-        symbol.category is MorseCategory.LETTER
-        for symbol in registry.symbols
-    ) == 27
-    assert sum(
-        symbol.category is MorseCategory.FIGURE
-        for symbol in registry.symbols
-    ) == 10
-    assert sum(
-        symbol.category is MorseCategory.PUNCTUATION
-        for symbol in registry.symbols
-    ) == 14
+    assert sum(symbol.category is MorseCategory.LETTER for symbol in registry.symbols) == 27
+    assert sum(symbol.category is MorseCategory.FIGURE for symbol in registry.symbols) == 10
+    assert sum(symbol.category is MorseCategory.PUNCTUATION for symbol in registry.symbols) == 14
 
 
 def test_question_mark_and_comma_assignments_are_not_interchanged() -> None:
@@ -83,7 +73,7 @@ def test_unknown_glyph_and_invalid_patterns_fail_closed() -> None:
 
     with pytest.raises(MorseError, match="found 0"):
         registry.symbol_for_glyph("$")
-    with pytest.raises(MorseError, match="only '.' and '-'"):
+    with pytest.raises(MorseError, match=re.escape("only '.' and '-'")):
         registry.symbols_for_pattern("001100")
     with pytest.raises(MorseError, match="eight elements"):
         registry.has_pattern(".........")
@@ -153,9 +143,7 @@ def test_verified_loader_detects_reference_tampering(tmp_path: Path) -> None:
     reference_target = tmp_path / MORSE_REFERENCE_PATH
     manifest_target.parent.mkdir(parents=True)
     reference_target.parent.mkdir(parents=True)
-    manifest_target.write_bytes(
-        (_REPOSITORY_ROOT / MORSE_MANIFEST_PATH).read_bytes()
-    )
+    manifest_target.write_bytes((_REPOSITORY_ROOT / MORSE_MANIFEST_PATH).read_bytes())
     reference_target.write_text(
         _REFERENCE_PATH.read_text(encoding="utf-8") + "\n",
         encoding="utf-8",
