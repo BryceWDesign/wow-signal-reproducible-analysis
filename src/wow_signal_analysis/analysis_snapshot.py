@@ -73,19 +73,12 @@ class SnapshotConfig:
 
     def __post_init__(self) -> None:
         if not isinstance(self.gaussian_search, GaussianSearchConfig):
-            raise AnalysisSnapshotError(
-                "gaussian_search must be a GaussianSearchConfig"
-            )
+            raise AnalysisSnapshotError("gaussian_search must be a GaussianSearchConfig")
         if not self.selected_morse_glyphs:
             raise AnalysisSnapshotError("selected_morse_glyphs must not be empty")
         if len(set(self.selected_morse_glyphs)) != len(self.selected_morse_glyphs):
-            raise AnalysisSnapshotError(
-                "selected_morse_glyphs must not contain duplicates"
-            )
-        if any(
-            len(glyph) != 1 or glyph.isspace()
-            for glyph in self.selected_morse_glyphs
-        ):
+            raise AnalysisSnapshotError("selected_morse_glyphs must not contain duplicates")
+        if any(len(glyph) != 1 or glyph.isspace() for glyph in self.selected_morse_glyphs):
             raise AnalysisSnapshotError(
                 "selected_morse_glyphs must contain single printable glyphs"
             )
@@ -120,30 +113,18 @@ class AnalysisSnapshot:
 
     def __post_init__(self) -> None:
         if self.schema_version != ANALYSIS_SNAPSHOT_SCHEMA_VERSION:
-            raise AnalysisSnapshotError(
-                "unsupported analysis snapshot schema_version"
-            )
+            raise AnalysisSnapshotError("unsupported analysis snapshot schema_version")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise AnalysisSnapshotError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise AnalysisSnapshotError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
 
         midpoint_snr = self.dataset.midpoint_snr
-        elapsed_seconds = tuple(
-            sample.elapsed_seconds for sample in self.dataset.samples
-        )
-        gaussian_observed = tuple(
-            sample.observed_snr for sample in self.gaussian_fit.samples
-        )
+        elapsed_seconds = tuple(sample.elapsed_seconds for sample in self.dataset.samples)
+        gaussian_observed = tuple(sample.observed_snr for sample in self.gaussian_fit.samples)
 
         if self.repository.printer_sequence != self.dataset.printer_sequence:
-            raise AnalysisSnapshotError(
-                "repository contract and dataset printer sequences differ"
-            )
+            raise AnalysisSnapshotError("repository contract and dataset printer sequences differ")
         if self.profile.values != midpoint_snr:
-            raise AnalysisSnapshotError(
-                "sequence profile does not match dataset midpoint values"
-            )
+            raise AnalysisSnapshotError("sequence profile does not match dataset midpoint values")
         if gaussian_observed != midpoint_snr:
             raise AnalysisSnapshotError(
                 "Gaussian fit observations do not match dataset midpoint values"
@@ -153,25 +134,15 @@ class AnalysisSnapshot:
                 "quantization midpoint fit does not match the canonical Gaussian fit"
             )
         if self.model_comparison.elapsed_seconds != elapsed_seconds:
-            raise AnalysisSnapshotError(
-                "model comparison times do not match the dataset"
-            )
+            raise AnalysisSnapshotError("model comparison times do not match the dataset")
         if self.model_comparison.observed_snr != midpoint_snr:
-            raise AnalysisSnapshotError(
-                "model comparison values do not match the dataset"
-            )
+            raise AnalysisSnapshotError("model comparison values do not match the dataset")
         if self.morse_correspondence.values != midpoint_snr:
-            raise AnalysisSnapshotError(
-                "Morse correspondence values do not match the dataset"
-            )
+            raise AnalysisSnapshotError("Morse correspondence values do not match the dataset")
         if self.permutation_null.original_values != midpoint_snr:
-            raise AnalysisSnapshotError(
-                "permutation null values do not match the dataset"
-            )
+            raise AnalysisSnapshotError("permutation null values do not match the dataset")
 
-        null_glyphs = tuple(
-            summary.glyph for summary in self.permutation_null.glyph_summaries
-        )
+        null_glyphs = tuple(summary.glyph for summary in self.permutation_null.glyph_summaries)
         if null_glyphs != self.config.selected_morse_glyphs:
             raise AnalysisSnapshotError(
                 "permutation null glyphs do not match snapshot configuration"
@@ -180,17 +151,13 @@ class AnalysisSnapshot:
             self.morse_registry.symbol_for_glyph(glyph)
 
         if self.claim_ledger.ledger_id != self.repository.claim_ledger_id:
-            raise AnalysisSnapshotError(
-                "claim ledger does not match the repository contract"
-            )
+            raise AnalysisSnapshotError("claim ledger does not match the repository contract")
         if self.hypothesis_matrix.ledger_id != self.claim_ledger.ledger_id:
             raise AnalysisSnapshotError(
                 "hypothesis matrix is not bound to the snapshot claim ledger"
             )
         if self.hypothesis_matrix.matrix_id != self.repository.hypothesis_matrix_id:
-            raise AnalysisSnapshotError(
-                "hypothesis matrix does not match the repository contract"
-            )
+            raise AnalysisSnapshotError("hypothesis matrix does not match the repository contract")
 
     def to_mapping(self) -> dict[str, object]:
         """Return a deterministic, JSON-compatible snapshot representation."""
@@ -244,12 +211,8 @@ class AnalysisSnapshot:
             "gaussian_search": {
                 "grid_points": search.grid_points,
                 "refinement_rounds": search.refinement_rounds,
-                "center_padding_cadences": _float_text(
-                    search.center_padding_cadences
-                ),
-                "minimum_sigma_cadences": _float_text(
-                    search.minimum_sigma_cadences
-                ),
+                "center_padding_cadences": _float_text(search.center_padding_cadences),
+                "minimum_sigma_cadences": _float_text(search.minimum_sigma_cadences),
                 "maximum_sigma_spans": _float_text(search.maximum_sigma_spans),
             },
             "selected_morse_glyphs": list(self.config.selected_morse_glyphs),
@@ -276,12 +239,9 @@ class AnalysisSnapshot:
             "printer_sequence": self.dataset.printer_sequence,
             "sample_count": len(self.dataset.samples),
             "elapsed_seconds": [
-                _decimal_text(sample.elapsed_seconds)
-                for sample in self.dataset.samples
+                _decimal_text(sample.elapsed_seconds) for sample in self.dataset.samples
             ],
-            "midpoint_snr": [
-                _decimal_text(value) for value in self.dataset.midpoint_snr
-            ],
+            "midpoint_snr": [_decimal_text(value) for value in self.dataset.midpoint_snr],
             "trend_signature": self.profile.trend_signature,
             "peak_index": self.profile.peak_index,
             "peak_value": _decimal_text(self.profile.peak_value),
@@ -302,12 +262,8 @@ class AnalysisSnapshot:
             "sigma_seconds": _float_text(fit.sigma_seconds),
             "fwhm_seconds": _float_text(fit.fwhm_seconds),
             "sum_squared_error": _float_text(fit.sum_squared_error),
-            "root_mean_squared_error": _float_text(
-                fit.root_mean_squared_error
-            ),
-            "coefficient_of_determination": _float_text(
-                fit.coefficient_of_determination
-            ),
+            "root_mean_squared_error": _float_text(fit.root_mean_squared_error),
+            "coefficient_of_determination": _float_text(fit.coefficient_of_determination),
             "samples": [
                 {
                     "sample_index": sample.sample_index,
@@ -322,22 +278,15 @@ class AnalysisSnapshot:
     def _quantization_mapping(self) -> dict[str, object]:
         return {
             "interpretation": (
-                "Exhaustive lower-bound/upper-supremum corner ranges; "
-                "not confidence intervals."
+                "Exhaustive lower-bound/upper-supremum corner ranges; not confidence intervals."
             ),
             "evaluated_corner_count": self.quantization.evaluated_corner_count,
             "metric_envelopes": [
                 {
                     "metric": metric.value,
-                    "minimum": _float_text(
-                        self.quantization.envelope(metric).minimum
-                    ),
-                    "maximum": _float_text(
-                        self.quantization.envelope(metric).maximum
-                    ),
-                    "span": _float_text(
-                        self.quantization.envelope(metric).span
-                    ),
+                    "minimum": _float_text(self.quantization.envelope(metric).minimum),
+                    "maximum": _float_text(self.quantization.envelope(metric).maximum),
+                    "span": _float_text(self.quantization.envelope(metric).span),
                     "minimum_corner_pattern": self.quantization.envelope(
                         metric
                     ).minimum_corner_pattern,
@@ -354,16 +303,13 @@ class AnalysisSnapshot:
             "method": "leave-one-out-cross-validation",
             "best_model": self.model_comparison.best_model.model.value,
             "ranking": [
-                result.model.value
-                for result in self.model_comparison.ranked_by_prediction_error
+                result.model.value for result in self.model_comparison.ranked_by_prediction_error
             ],
             "models": [
                 {
                     "model": result.model.value,
                     "parameter_count": result.parameter_count,
-                    "prediction_sum_squares": _float_text(
-                        result.prediction_sum_squares
-                    ),
+                    "prediction_sum_squares": _float_text(result.prediction_sum_squares),
                     "root_mean_squared_prediction_error": _float_text(
                         result.root_mean_squared_prediction_error
                     ),
@@ -371,10 +317,7 @@ class AnalysisSnapshot:
                         result.mean_absolute_prediction_error
                     ),
                 }
-                for result in (
-                    self.model_comparison.result_for(model)
-                    for model in CandidateModel
-                )
+                for result in (self.model_comparison.result_for(model) for model in CandidateModel)
             ],
         }
 
@@ -408,20 +351,14 @@ class AnalysisSnapshot:
                         for comparison in observed
                     ],
                     "null_model": {
-                        "matched_sequence_count": (
-                            null_summary.matched_sequence_count
-                        ),
+                        "matched_sequence_count": (null_summary.matched_sequence_count),
                         "total_sequence_count": null_summary.total_sequence_count,
                         "sequence_fraction": {
                             "numerator": sequence_fraction.numerator,
                             "denominator": sequence_fraction.denominator,
                         },
-                        "matched_comparison_count": (
-                            null_summary.matched_comparison_count
-                        ),
-                        "total_comparison_count": (
-                            null_summary.total_comparison_count
-                        ),
+                        "matched_comparison_count": (null_summary.matched_comparison_count),
+                        "total_comparison_count": (null_summary.total_comparison_count),
                         "comparison_fraction": {
                             "numerator": comparison_fraction.numerator,
                             "denominator": comparison_fraction.denominator,
@@ -432,12 +369,8 @@ class AnalysisSnapshot:
 
         return {
             "standard_id": self.morse_registry.standard_id,
-            "threshold_case_count": len(
-                self.morse_correspondence.threshold_cases
-            ),
-            "comparison_count_per_observed_sequence": len(
-                self.morse_correspondence.comparisons
-            ),
+            "threshold_case_count": len(self.morse_correspondence.threshold_cases),
+            "comparison_count_per_observed_sequence": len(self.morse_correspondence.comparisons),
             "glyphs": glyphs,
             "conclusion": (
                 "The correspondences are reproducible but non-unique and do not "
@@ -459,18 +392,12 @@ class AnalysisSnapshot:
                     "estimate_id": estimate.estimate_id,
                     "status": estimate.status.value,
                     "frequency_mhz": _decimal_text(estimate.frequency_mhz),
-                    "uncertainty_mhz": _decimal_text(
-                        estimate.uncertainty_mhz
-                    ),
+                    "uncertainty_mhz": _decimal_text(estimate.uncertainty_mhz),
                     "delta_mhz": _decimal_text(
-                        self.frequency_context.offset_for(
-                            estimate.estimate_id
-                        ).delta_mhz
+                        self.frequency_context.offset_for(estimate.estimate_id).delta_mhz
                     ),
                     "absolute_offset_khz": _decimal_text(
-                        self.frequency_context.offset_for(
-                            estimate.estimate_id
-                        ).absolute_offset_khz
+                        self.frequency_context.offset_for(estimate.estimate_id).absolute_offset_khz
                     ),
                     "uncertainty_interval_contains_rest": (
                         self.frequency_context.offset_for(
@@ -489,19 +416,13 @@ class AnalysisSnapshot:
             "classification_counts": [
                 {
                     "classification": classification.value,
-                    "count": len(
-                        self.claim_ledger.claims_by_classification(
-                            classification
-                        )
-                    ),
+                    "count": len(self.claim_ledger.claims_by_classification(classification)),
                 }
                 for classification in ClaimClassification
             ],
             "not_established_claim_ids": [
                 claim.claim_id
-                for claim in self.claim_ledger.claims_by_verdict(
-                    ClaimVerdict.NOT_ESTABLISHED
-                )
+                for claim in self.claim_ledger.claims_by_verdict(ClaimVerdict.NOT_ESTABLISHED)
             ],
         }
 
@@ -512,9 +433,7 @@ class AnalysisSnapshot:
             "status_counts": [
                 {
                     "status": status.value,
-                    "count": len(
-                        self.hypothesis_matrix.hypotheses_by_status(status)
-                    ),
+                    "count": len(self.hypothesis_matrix.hypotheses_by_status(status)),
                 }
                 for status in HypothesisStatus
             ],
