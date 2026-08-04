@@ -49,22 +49,15 @@ def test_snapshot_binds_every_canonical_analysis_component(
     assert snapshot.profile.is_strict_single_peak
     assert snapshot.quantization.evaluated_corner_count == 64
     assert snapshot.claim_ledger.ledger_id == snapshot.repository.claim_ledger_id
-    assert (
-        snapshot.hypothesis_matrix.matrix_id
-        == snapshot.repository.hypothesis_matrix_id
-    )
+    assert snapshot.hypothesis_matrix.matrix_id == snapshot.repository.hypothesis_matrix_id
 
 
 def test_snapshot_preserves_model_ranking_and_quantization_ranges(
     snapshot: AnalysisSnapshot,
 ) -> None:
-    assert (
-        snapshot.model_comparison.best_model.model
-        is CandidateModel.GAUSSIAN_TRANSIT
-    )
+    assert snapshot.model_comparison.best_model.model is CandidateModel.GAUSSIAN_TRANSIT
     assert tuple(
-        result.model
-        for result in snapshot.model_comparison.ranked_by_prediction_error
+        result.model for result in snapshot.model_comparison.ranked_by_prediction_error
     ) == (
         CandidateModel.GAUSSIAN_TRANSIT,
         CandidateModel.QUADRATIC,
@@ -99,18 +92,14 @@ def test_snapshot_retains_non_establishment_verdicts(
 ) -> None:
     assert tuple(
         claim.claim_id
-        for claim in snapshot.claim_ledger.claims_by_verdict(
-            ClaimVerdict.NOT_ESTABLISHED
-        )
+        for claim in snapshot.claim_ledger.claims_by_verdict(ClaimVerdict.NOT_ESTABLISHED)
     ) == (
         "speculative-intentional-message",
         "speculative-extraterrestrial-technology",
     )
-    assert len(
-        snapshot.hypothesis_matrix.hypotheses_by_status(
-            HypothesisStatus.NOT_ESTABLISHED
-        )
-    ) == 2
+    assert (
+        len(snapshot.hypothesis_matrix.hypotheses_by_status(HypothesisStatus.NOT_ESTABLISHED)) == 2
+    )
 
 
 def test_snapshot_mapping_is_portable_and_json_serialization_is_stable(
@@ -125,10 +114,7 @@ def test_snapshot_mapping_is_portable_and_json_serialization_is_stable(
     assert decoded == mapping
     assert mapping["repository"]["repository_root"] == "."
     assert mapping["observation"]["printer_sequence"] == "6EQUJ5"
-    assert (
-        mapping["symbolic_correspondence"]["standard_id"]
-        == "ITU-R M.1677-1"
-    )
+    assert mapping["symbolic_correspondence"]["standard_id"] == "ITU-R M.1677-1"
     assert mapping["claim_ledger"]["claim_count"] == 12
     assert mapping["hypothesis_matrix"]["hypothesis_count"] == 5
 
