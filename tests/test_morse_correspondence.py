@@ -83,15 +83,9 @@ def test_question_mark_requires_the_declared_central_threshold_and_polarity() ->
     assert len(matches) == 2
     assert {match.cut_index for match in matches} == {4}
     assert {match.direction for match in matches} == set(SequenceDirection)
-    assert {match.polarity for match in matches} == {
-        MorsePolarity.HIGH_IS_DASH
-    }
-    assert {match.lower_bound_inclusive for match in matches} == {
-        Decimal("19.5")
-    }
-    assert {match.upper_bound_exclusive for match in matches} == {
-        Decimal("26.5")
-    }
+    assert {match.polarity for match in matches} == {MorsePolarity.HIGH_IS_DASH}
+    assert {match.lower_bound_inclusive for match in matches} == {Decimal("19.5")}
+    assert {match.upper_bound_exclusive for match in matches} == {Decimal("26.5")}
     assert {match.binary_pattern for match in matches} == {"001100"}
     assert {match.morse_pattern for match in matches} == {"..--.."}
 
@@ -125,9 +119,7 @@ def test_report_exposes_all_matches_instead_of_selecting_question_only() -> None
     report = analyze_threshold_morse(_canonical_values(), _registry())
 
     assert len(report.assigned_comparisons) == 8
-    assert tuple(
-        symbol.glyph for symbol in report.unique_assigned_symbols
-    ) == ("'", "-", "?", ",")
+    assert tuple(symbol.glyph for symbol in report.unique_assigned_symbols) == ("'", "-", "?", ",")
 
 
 def test_nonpalindromic_partition_changes_when_read_in_reverse() -> None:
@@ -158,14 +150,8 @@ def test_nonpalindromic_partition_changes_when_read_in_reverse() -> None:
 def test_mask_rendering_requires_explicit_polarity() -> None:
     mask = (False, False, True, True, False, False)
 
-    assert (
-        morse_pattern_from_mask(mask, MorsePolarity.HIGH_IS_DASH)
-        == "..--.."
-    )
-    assert (
-        morse_pattern_from_mask(mask, MorsePolarity.HIGH_IS_DOT)
-        == "--..--"
-    )
+    assert morse_pattern_from_mask(mask, MorsePolarity.HIGH_IS_DASH) == "..--.."
+    assert morse_pattern_from_mask(mask, MorsePolarity.HIGH_IS_DOT) == "--..--"
 
     with pytest.raises(MorseCorrespondenceError, match="must not be empty"):
         morse_pattern_from_mask((), MorsePolarity.HIGH_IS_DASH)
