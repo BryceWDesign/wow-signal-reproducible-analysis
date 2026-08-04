@@ -43,15 +43,9 @@ class ThresholdCase:
             raise ThresholdError("high_mask must not be empty")
         if not self.representative_threshold.is_finite():
             raise ThresholdError("representative_threshold must be finite")
-        if (
-            self.lower_bound_inclusive is not None
-            and not self.lower_bound_inclusive.is_finite()
-        ):
+        if self.lower_bound_inclusive is not None and not self.lower_bound_inclusive.is_finite():
             raise ThresholdError("lower_bound_inclusive must be finite when present")
-        if (
-            self.upper_bound_exclusive is not None
-            and not self.upper_bound_exclusive.is_finite()
-        ):
+        if self.upper_bound_exclusive is not None and not self.upper_bound_exclusive.is_finite():
             raise ThresholdError("upper_bound_exclusive must be finite when present")
         if (
             self.lower_bound_inclusive is not None
@@ -93,23 +87,17 @@ class ThresholdCase:
     ) -> str:
         """Render the threshold partition in reverse temporal order."""
 
-        return "".join(
-            polarity.render(is_high) for is_high in reversed(self.high_mask)
-        )
+        return "".join(polarity.render(is_high) for is_high in reversed(self.high_mask))
 
     def contains_threshold(self, threshold: Decimal) -> bool:
         """Return whether a threshold belongs to this equivalence interval."""
 
         if not threshold.is_finite():
             return False
-        if (
-            self.lower_bound_inclusive is not None
-            and threshold < self.lower_bound_inclusive
-        ):
+        if self.lower_bound_inclusive is not None and threshold < self.lower_bound_inclusive:
             return False
         return not (
-            self.upper_bound_exclusive is not None
-            and threshold >= self.upper_bound_exclusive
+            self.upper_bound_exclusive is not None and threshold >= self.upper_bound_exclusive
         )
 
 
