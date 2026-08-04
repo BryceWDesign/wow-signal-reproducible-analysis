@@ -168,11 +168,7 @@ class ArtifactAuditCommandResult:
     def to_text(self) -> str:
         """Return a stable human-readable audit summary."""
 
-        inventory_mode = (
-            "strict"
-            if self.report.strict_directory
-            else "allow-extra-files"
-        )
+        inventory_mode = "strict" if self.report.strict_directory else "allow-extra-files"
         lines = [
             "Generated artifact audit: verified",
             f"Audit: {self.report.audit_id}",
@@ -268,11 +264,7 @@ class ArtifactCommandResult:
         return "\n".join(lines) + "\n"
 
 
-CommandResult = (
-    VerificationCommandResult
-    | ArtifactAuditCommandResult
-    | ArtifactCommandResult
-)
+CommandResult = VerificationCommandResult | ArtifactAuditCommandResult | ArtifactCommandResult
 
 
 def main(
@@ -372,9 +364,7 @@ def _parse_arguments(
     argv: Sequence[str] | None,
 ) -> CommandOptions:
     parser = _build_parser()
-    namespace = parser.parse_args(
-        None if argv is None else list(argv)
-    )
+    namespace = parser.parse_args(None if argv is None else list(argv))
 
     command = cast(str, namespace.command)
     repository_root = cast(Path, namespace.repository_root)
@@ -396,11 +386,7 @@ def _parse_arguments(
         )
 
     glyph_values = cast(list[str] | None, namespace.glyphs)
-    selected_glyphs = (
-        tuple(glyph_values)
-        if glyph_values is not None
-        else ("?", ",")
-    )
+    selected_glyphs = tuple(glyph_values) if glyph_values is not None else ("?", ",")
 
     check = cast(bool, namespace.check)
     no_overwrite = cast(bool, namespace.no_overwrite)
@@ -481,9 +467,7 @@ def _build_parser() -> argparse.ArgumentParser:
     action_group.add_argument(
         "--check",
         action="store_true",
-        help=(
-            "Verify existing generated artifacts instead of writing them."
-        ),
+        help=("Verify existing generated artifacts instead of writing them."),
     )
     action_group.add_argument(
         "--no-overwrite",
