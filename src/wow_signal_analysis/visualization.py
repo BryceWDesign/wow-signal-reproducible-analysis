@@ -39,13 +39,9 @@ class SvgFigure:
 
     def __post_init__(self) -> None:
         if not _IDENTIFIER_PATTERN.fullmatch(self.figure_id):
-            raise VisualizationError(
-                "figure_id must be a lowercase hyphen-delimited identifier"
-            )
+            raise VisualizationError("figure_id must be a lowercase hyphen-delimited identifier")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise VisualizationError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise VisualizationError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if not self.title.strip() or not self.description.strip():
             raise VisualizationError("title and description must be non-empty")
         if not self.svg.startswith("<svg "):
@@ -64,21 +60,11 @@ class SvgFigure:
         title_id = f"{self.figure_id}-title"
         description_id = f"{self.figure_id}-description"
         if f'aria-labelledby="{title_id} {description_id}"' not in self.svg:
-            raise VisualizationError(
-                "svg must bind its accessible title and description"
-            )
-        if (
-            f'<title id="{title_id}">{html.escape(self.title)}</title>'
-            not in self.svg
-        ):
+            raise VisualizationError("svg must bind its accessible title and description")
+        if f'<title id="{title_id}">{html.escape(self.title)}</title>' not in self.svg:
             raise VisualizationError("svg title does not match figure metadata")
-        if (
-            f'<desc id="{description_id}">{html.escape(self.description)}</desc>'
-            not in self.svg
-        ):
-            raise VisualizationError(
-                "svg description does not match figure metadata"
-            )
+        if f'<desc id="{description_id}">{html.escape(self.description)}</desc>' not in self.svg:
+            raise VisualizationError("svg description does not match figure metadata")
 
     @property
     def content(self) -> bytes:
@@ -104,32 +90,18 @@ class AnalysisFigureSet:
 
     def __post_init__(self) -> None:
         if self.figure_set_id != ANALYSIS_FIGURE_SET_ID:
-            raise VisualizationError(
-                f"figure_set_id must be {ANALYSIS_FIGURE_SET_ID!r}"
-            )
+            raise VisualizationError(f"figure_set_id must be {ANALYSIS_FIGURE_SET_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise VisualizationError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise VisualizationError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if self.beam_fit.figure_id != BEAM_FIT_FIGURE_ID:
-            raise VisualizationError(
-                f"beam_fit figure_id must be {BEAM_FIT_FIGURE_ID!r}"
-            )
+            raise VisualizationError(f"beam_fit figure_id must be {BEAM_FIT_FIGURE_ID!r}")
         if self.model_comparison.figure_id != MODEL_COMPARISON_FIGURE_ID:
             raise VisualizationError(
-                "model_comparison figure_id must be "
-                f"{MODEL_COMPARISON_FIGURE_ID!r}"
+                f"model_comparison figure_id must be {MODEL_COMPARISON_FIGURE_ID!r}"
             )
-        if any(
-            figure.analysis_id != self.analysis_id
-            for figure in self.figures
-        ):
-            raise VisualizationError(
-                "all figures must belong to the figure set analysis_id"
-            )
-        if len({figure.figure_id for figure in self.figures}) != len(
-            self.figures
-        ):
+        if any(figure.analysis_id != self.analysis_id for figure in self.figures):
+            raise VisualizationError("all figures must belong to the figure set analysis_id")
+        if len({figure.figure_id for figure in self.figures}) != len(self.figures):
             raise VisualizationError("figure IDs must be unique")
 
     @property
@@ -141,15 +113,9 @@ class AnalysisFigureSet:
     def figure_by_id(self, figure_id: str) -> SvgFigure:
         """Return one unique figure by its canonical identifier."""
 
-        matches = tuple(
-            figure
-            for figure in self.figures
-            if figure.figure_id == figure_id
-        )
+        matches = tuple(figure for figure in self.figures if figure.figure_id == figure_id)
         if len(matches) != 1:
-            raise VisualizationError(
-                f"expected one figure for {figure_id!r}, found {len(matches)}"
-            )
+            raise VisualizationError(f"expected one figure for {figure_id!r}, found {len(matches)}")
         return matches[0]
 
 
@@ -234,9 +200,7 @@ def _render_beam_fit(snapshot: AnalysisSnapshot) -> SvgFigure:
             strict=True,
         )
     )
-    lines.append(
-        f'<polyline class="fit-line" points="{predicted_points}" />'
-    )
+    lines.append(f'<polyline class="fit-line" points="{predicted_points}" />')
 
     for sample, time, value in zip(
         samples,
@@ -253,10 +217,7 @@ def _render_beam_fit(snapshot: AnalysisSnapshot) -> SvgFigure:
         )
         lines.extend(
             (
-                (
-                    f'<circle class="observed-point" '
-                    f'cx="{x:.2f}" cy="{y:.2f}" r="6">'
-                ),
+                (f'<circle class="observed-point" cx="{x:.2f}" cy="{y:.2f}" r="6">'),
                 f"  <title>{html.escape(label)}</title>",
                 "</circle>",
             )
@@ -265,15 +226,9 @@ def _render_beam_fit(snapshot: AnalysisSnapshot) -> SvgFigure:
     lines.extend(
         (
             '<g class="legend" aria-label="Legend">',
-            (
-                '  <circle class="observed-point" '
-                'cx="706" cy="89" r="5" />'
-            ),
+            ('  <circle class="observed-point" cx="706" cy="89" r="5" />'),
             '  <text x="719" y="94">Observed midpoint</text>',
-            (
-                '  <line class="fit-line" '
-                'x1="706" y1="111" x2="739" y2="111" />'
-            ),
+            ('  <line class="fit-line" x1="706" y1="111" x2="739" y2="111" />'),
             '  <text x="748" y="116">Gaussian fit</text>',
             "</g>",
             "</svg>",
@@ -305,10 +260,7 @@ def _render_model_comparison(
         bottom=430.0,
     )
     results = snapshot.model_comparison.ranked_by_prediction_error
-    values = tuple(
-        result.root_mean_squared_prediction_error
-        for result in results
-    )
+    values = tuple(result.root_mean_squared_prediction_error for result in results)
     y_max = _rounded_axis_max(max(values))
 
     lines = _svg_header(figure_id, title, description)
@@ -317,10 +269,7 @@ def _render_model_comparison(
         _plot_background(
             plot,
             heading="Leave-one-out root mean squared prediction error",
-            note=(
-                "Lower held-out error indicates better prediction "
-                "within this model set"
-            ),
+            note=("Lower held-out error indicates better prediction within this model set"),
         )
     )
     lines.extend(
@@ -341,11 +290,7 @@ def _render_model_comparison(
     bar_width = slot_width * 0.58
     for index, result in enumerate(results):
         value = result.root_mean_squared_prediction_error
-        x = (
-            plot.left
-            + index * slot_width
-            + (slot_width - bar_width) / 2.0
-        )
+        x = plot.left + index * slot_width + (slot_width - bar_width) / 2.0
         y = _y_position(value, 0.0, y_max, plot)
         height = plot.bottom - y
         model_label = result.model.value
@@ -357,10 +302,7 @@ def _render_model_comparison(
                     f'x="{x:.2f}" y="{y:.2f}" '
                     f'width="{bar_width:.2f}" height="{height:.2f}">'
                 ),
-                (
-                    f"  <title>{html.escape(model_label)}: "
-                    f"held-out RMSE {value:.6f}</title>"
-                ),
+                (f"  <title>{html.escape(model_label)}: held-out RMSE {value:.6f}</title>"),
                 "</rect>",
                 (
                     f'<text class="bar-value" '
@@ -417,9 +359,7 @@ class _PlotArea:
         ):
             raise VisualizationError("plot bounds must be finite")
         if self.left >= self.right or self.top >= self.bottom:
-            raise VisualizationError(
-                "plot bounds must define a positive area"
-            )
+            raise VisualizationError("plot bounds must define a positive area")
 
     @property
     def width(self) -> float:
@@ -447,10 +387,7 @@ def _svg_header(
             f'aria-labelledby="{title_id} {description_id}">'
         ),
         f'<title id="{title_id}">{html.escape(title)}</title>',
-        (
-            f'<desc id="{description_id}">'
-            f"{html.escape(description)}</desc>"
-        ),
+        (f'<desc id="{description_id}">{html.escape(description)}</desc>'),
     ]
 
 
@@ -458,42 +395,21 @@ def _style_lines() -> tuple[str, ...]:
     return (
         "<style>",
         "  .background { fill: #ffffff; }",
-        (
-            "  .plot-background { fill: #f7f7f7; "
-            "stroke: #1f2933; stroke-width: 1; }"
-        ),
+        ("  .plot-background { fill: #f7f7f7; stroke: #1f2933; stroke-width: 1; }"),
         "  .grid-line { stroke: #cbd2d9; stroke-width: 1; }",
         "  .axis-line { stroke: #1f2933; stroke-width: 1.5; }",
-        (
-            "  .fit-line { fill: none; stroke: #1f4e79; "
-            "stroke-width: 3; }"
-        ),
-        (
-            "  .observed-point { fill: #ffffff; stroke: #b42318; "
-            "stroke-width: 3; }"
-        ),
-        (
-            "  .model-bar { fill: #4d6f8f; stroke: #1f2933; "
-            "stroke-width: 1; }"
-        ),
+        ("  .fit-line { fill: none; stroke: #1f4e79; stroke-width: 3; }"),
+        ("  .observed-point { fill: #ffffff; stroke: #b42318; stroke-width: 3; }"),
+        ("  .model-bar { fill: #4d6f8f; stroke: #1f2933; stroke-width: 1; }"),
         "  .rank-1 { fill: #2f6b4f; }",
-        (
-            "  text { fill: #1f2933; "
-            "font-family: Arial, Helvetica, sans-serif; }"
-        ),
+        ("  text { fill: #1f2933; font-family: Arial, Helvetica, sans-serif; }"),
         "  .heading { font-size: 20px; font-weight: 700; }",
         "  .note { font-size: 13px; }",
         "  .tick-label { font-size: 12px; }",
         "  .axis-label { font-size: 14px; font-weight: 700; }",
         "  .legend { font-size: 13px; }",
-        (
-            "  .bar-value { font-size: 13px; font-weight: 700; "
-            "text-anchor: middle; }"
-        ),
-        (
-            "  .category-label { font-size: 12px; "
-            "text-anchor: middle; }"
-        ),
+        ("  .bar-value { font-size: 13px; font-weight: 700; text-anchor: middle; }"),
+        ("  .category-label { font-size: 12px; text-anchor: middle; }"),
         "  .annotation { font-size: 12px; }",
         "</style>",
     )
@@ -506,20 +422,9 @@ def _plot_background(
     note: str,
 ) -> tuple[str, ...]:
     return (
-        (
-            '<rect class="background" '
-            'x="0" y="0" width="960" height="540" />'
-        ),
-        (
-            f'<text class="heading" '
-            f'x="{plot.left:.2f}" y="30">'
-            f"{html.escape(heading)}</text>"
-        ),
-        (
-            f'<text class="note" '
-            f'x="{plot.left:.2f}" y="49">'
-            f"{html.escape(note)}</text>"
-        ),
+        ('<rect class="background" x="0" y="0" width="960" height="540" />'),
+        (f'<text class="heading" x="{plot.left:.2f}" y="30">{html.escape(heading)}</text>'),
+        (f'<text class="note" x="{plot.left:.2f}" y="49">{html.escape(note)}</text>'),
         (
             f'<rect class="plot-background" '
             f'x="{plot.left:.2f}" y="{plot.top:.2f}" '
@@ -611,7 +516,7 @@ def _axis_lines(
             (
                 f'<text class="axis-label" '
                 f'transform="translate(25 '
-                f'{(plot.top + plot.bottom) / 2.0:.2f}) '
+                f"{(plot.top + plot.bottom) / 2.0:.2f}) "
                 f'rotate(-90)" text-anchor="middle">'
                 f"{html.escape(y_label)}</text>"
             ),
@@ -637,14 +542,9 @@ def _x_position(
     ):
         raise VisualizationError("x-axis values must be finite")
     if minimum >= maximum:
-        raise VisualizationError(
-            "x-axis minimum must be below maximum"
-        )
+        raise VisualizationError("x-axis minimum must be below maximum")
 
-    return (
-        plot.left
-        + ((value - minimum) / (maximum - minimum)) * plot.width
-    )
+    return plot.left + ((value - minimum) / (maximum - minimum)) * plot.width
 
 
 def _y_position(
@@ -663,14 +563,9 @@ def _y_position(
     ):
         raise VisualizationError("y-axis values must be finite")
     if minimum >= maximum:
-        raise VisualizationError(
-            "y-axis minimum must be below maximum"
-        )
+        raise VisualizationError("y-axis minimum must be below maximum")
 
-    return (
-        plot.bottom
-        - ((value - minimum) / (maximum - minimum)) * plot.height
-    )
+    return plot.bottom - ((value - minimum) / (maximum - minimum)) * plot.height
 
 
 def _linear_ticks(
@@ -679,9 +574,7 @@ def _linear_ticks(
     interval_count: int,
 ) -> tuple[tuple[float, str], ...]:
     if interval_count <= 0:
-        raise VisualizationError(
-            "interval_count must be positive"
-        )
+        raise VisualizationError("interval_count must be positive")
 
     step = (maximum - minimum) / interval_count
     return tuple(
@@ -695,9 +588,7 @@ def _linear_ticks(
 
 def _rounded_axis_max(value: float) -> float:
     if not math.isfinite(value) or value <= 0.0:
-        raise VisualizationError(
-            "axis maximum source value must be positive and finite"
-        )
+        raise VisualizationError("axis maximum source value must be positive and finite")
 
     magnitude = 10.0 ** math.floor(math.log10(value))
     normalized = value / magnitude
@@ -716,8 +607,6 @@ def _rounded_axis_max(value: float) -> float:
 
 def _decimal_label(value: Decimal) -> str:
     if not value.is_finite():
-        raise VisualizationError(
-            "decimal labels must be finite"
-        )
+        raise VisualizationError("decimal labels must be finite")
 
     return str(value)
