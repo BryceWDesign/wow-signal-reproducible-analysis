@@ -14,9 +14,7 @@ from wow_signal_analysis.thresholds import (
 
 
 def _canonical_values() -> tuple[Decimal, ...]:
-    return tuple(
-        sample.intensity.midpoint_snr for sample in canonical_wow_samples()
-    )
+    return tuple(sample.intensity.midpoint_snr for sample in canonical_wow_samples())
 
 
 def test_canonical_threshold_enumeration_is_exhaustive_and_ordered() -> None:
@@ -38,10 +36,7 @@ def test_canonical_threshold_enumeration_is_exhaustive_and_ordered() -> None:
 def test_canonical_threshold_intervals_are_explicit() -> None:
     cases = enumerate_threshold_cases(_canonical_values())
 
-    assert tuple(
-        (case.lower_bound_inclusive, case.upper_bound_exclusive)
-        for case in cases
-    ) == (
+    assert tuple((case.lower_bound_inclusive, case.upper_bound_exclusive) for case in cases) == (
         (None, Decimal("5.5")),
         (Decimal("5.5"), Decimal("6.5")),
         (Decimal("6.5"), Decimal("14.5")),
