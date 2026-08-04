@@ -174,9 +174,7 @@ def analyze_midpoint_values(values: Sequence[Decimal]) -> SequenceProfile:
 def analyze_samples(samples: Sequence[SignalSample]) -> SequenceProfile:
     """Profile the midpoint estimates represented by ordered signal samples."""
 
-    return analyze_midpoint_values(
-        tuple(sample.intensity.midpoint_snr for sample in samples)
-    )
+    return analyze_midpoint_values(tuple(sample.intensity.midpoint_snr for sample in samples))
 
 
 def _build_changes(values: tuple[Decimal, ...]) -> tuple[AdjacentChange, ...]:
