@@ -16,12 +16,8 @@ from wow_signal_analysis.provenance import (
     require_verified_artifacts,
 )
 
-FREQUENCY_REFERENCE_PATH: Final = PurePosixPath(
-    "data/reference/frequency_context.json"
-)
-FREQUENCY_MANIFEST_PATH: Final = PurePosixPath(
-    "data/provenance/frequency_source_manifest.json"
-)
+FREQUENCY_REFERENCE_PATH: Final = PurePosixPath("data/reference/frequency_context.json")
+FREQUENCY_MANIFEST_PATH: Final = PurePosixPath("data/provenance/frequency_source_manifest.json")
 
 _KILOHERTZ_PER_MEGAHERTZ: Final = Decimal("1000")
 _PARTS_PER_MILLION: Final = Decimal("1000000")
@@ -100,13 +96,8 @@ class FrequencyOffset:
             self.absolute_offset_khz,
             "absolute_offset_khz",
         )
-        if (
-            self.absolute_offset_khz
-            != abs(self.delta_mhz) * _KILOHERTZ_PER_MEGAHERTZ
-        ):
-            raise FrequencyContextError(
-                "absolute_offset_khz does not match delta_mhz"
-            )
+        if self.absolute_offset_khz != abs(self.delta_mhz) * _KILOHERTZ_PER_MEGAHERTZ:
+            raise FrequencyContextError("absolute_offset_khz does not match delta_mhz")
         if not self.relative_offset_ppm.is_finite():
             raise FrequencyContextError("relative_offset_ppm must be finite")
         _require_nonnegative_finite(self.uncertainty_khz, "uncertainty_khz")
@@ -122,13 +113,9 @@ class FrequencyContext:
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
-            raise FrequencyContextError(
-                "unsupported frequency context schema_version"
-            )
+            raise FrequencyContextError("unsupported frequency context schema_version")
         if not self.estimates:
-            raise FrequencyContextError(
-                "frequency context must contain at least one estimate"
-            )
+            raise FrequencyContextError("frequency context must contain at least one estimate")
 
         estimate_ids = tuple(estimate.estimate_id for estimate in self.estimates)
         if len(set(estimate_ids)) != len(estimate_ids):
@@ -144,10 +131,7 @@ class FrequencyContext:
     def offsets(self) -> tuple[FrequencyOffset, ...]:
         """Return exact offsets for every estimate in source order."""
 
-        return tuple(
-            self.offset_for(estimate.estimate_id)
-            for estimate in self.estimates
-        )
+        return tuple(self.offset_for(estimate.estimate_id) for estimate in self.estimates)
 
     @property
     def maximum_absolute_offset_khz(self) -> Decimal:
@@ -159,14 +143,11 @@ class FrequencyContext:
         """Return the unique estimate matching an explicit identifier."""
 
         matches = tuple(
-            estimate
-            for estimate in self.estimates
-            if estimate.estimate_id == estimate_id
+            estimate for estimate in self.estimates if estimate.estimate_id == estimate_id
         )
         if len(matches) != 1:
             raise FrequencyContextError(
-                f"expected one frequency estimate for {estimate_id!r}, "
-                f"found {len(matches)}"
+                f"expected one frequency estimate for {estimate_id!r}, found {len(matches)}"
             )
         return matches[0]
 
@@ -182,18 +163,10 @@ class FrequencyContext:
         return FrequencyOffset(
             estimate_id=estimate.estimate_id,
             delta_mhz=delta_mhz,
-            absolute_offset_khz=(
-                abs(delta_mhz) * _KILOHERTZ_PER_MEGAHERTZ
-            ),
-            relative_offset_ppm=(
-                (delta_mhz / rest_frequency) * _PARTS_PER_MILLION
-            ),
-            uncertainty_khz=(
-                estimate.uncertainty_mhz * _KILOHERTZ_PER_MEGAHERTZ
-            ),
-            uncertainty_interval_contains_rest=(
-                lower <= rest_frequency <= upper
-            ),
+            absolute_offset_khz=(abs(delta_mhz) * _KILOHERTZ_PER_MEGAHERTZ),
+            relative_offset_ppm=((delta_mhz / rest_frequency) * _PARTS_PER_MILLION),
+            uncertainty_khz=(estimate.uncertainty_mhz * _KILOHERTZ_PER_MEGAHERTZ),
+            uncertainty_interval_contains_rest=(lower <= rest_frequency <= upper),
         )
 
     def estimates_within_offset(
@@ -212,9 +185,7 @@ class FrequencyContext:
             if offset.absolute_offset_khz <= maximum_absolute_offset_khz
         }
         return tuple(
-            estimate
-            for estimate in self.estimates
-            if estimate.estimate_id in accepted_ids
+            estimate for estimate in self.estimates if estimate.estimate_id in accepted_ids
         )
 
 
@@ -224,22 +195,14 @@ def load_frequency_context(path: Path) -> FrequencyContext:
     try:
         payload: object = json.loads(path.read_text(encoding="utf-8"))
     except OSError as error:
-        raise FrequencyContextError(
-            f"unable to read frequency context: {path}"
-        ) from error
+        raise FrequencyContextError(f"unable to read frequency context: {path}") from error
     except json.JSONDecodeError as error:
-        raise FrequencyContextError(
-            f"invalid frequency context JSON: {path}"
-        ) from error
+        raise FrequencyContextError(f"invalid frequency context JSON: {path}") from error
 
     root = _require_mapping(payload, "frequency context")
-    rest_line = _rest_line_from_mapping(
-        _require_mapping(root.get("rest_line"), "rest_line")
-    )
+    rest_line = _rest_line_from_mapping(_require_mapping(root.get("rest_line"), "rest_line"))
     estimates = tuple(
-        _estimate_from_mapping(
-            _require_mapping(item, "frequency estimate")
-        )
+        _estimate_from_mapping(_require_mapping(item, "frequency estimate"))
         for item in _required_list(root, "wow_frequency_estimates")
     )
 
@@ -263,14 +226,11 @@ def load_verified_frequency_context(
     require_verified_artifacts(manifest, root)
 
     matches = tuple(
-        artifact
-        for artifact in manifest.artifacts
-        if artifact.path == str(reference_path)
+        artifact for artifact in manifest.artifacts if artifact.path == str(reference_path)
     )
     if len(matches) != 1:
         raise ProvenanceError(
-            f"expected one manifest artifact for {reference_path}, "
-            f"found {len(matches)}"
+            f"expected one manifest artifact for {reference_path}, found {len(matches)}"
         )
 
     context = load_frequency_context(root / reference_path)
@@ -280,16 +240,12 @@ def load_verified_frequency_context(
             f"but the frequency context contains {context.record_count} records"
         )
 
-    declared_source_ids = {
-        source.source_id for source in manifest.sources
-    }
+    declared_source_ids = {source.source_id for source in manifest.sources}
     referenced_source_ids = {
         context.rest_line.source_id,
         *(estimate.source_id for estimate in context.estimates),
     }
-    undeclared_source_ids = tuple(
-        sorted(referenced_source_ids - declared_source_ids)
-    )
+    undeclared_source_ids = tuple(sorted(referenced_source_ids - declared_source_ids))
     if undeclared_source_ids:
         raise ProvenanceError(
             "frequency context references source IDs absent from the manifest: "
@@ -339,13 +295,9 @@ def _require_mapping(
     field_name: str,
 ) -> dict[str, object]:
     if not isinstance(value, dict):
-        raise FrequencyContextError(
-            f"{field_name} must be a JSON object"
-        )
+        raise FrequencyContextError(f"{field_name} must be a JSON object")
     if any(not isinstance(key, str) for key in value):
-        raise FrequencyContextError(
-            f"{field_name} keys must be strings"
-        )
+        raise FrequencyContextError(f"{field_name} keys must be strings")
     return cast(dict[str, object], value)
 
 
@@ -355,9 +307,7 @@ def _required_list(
 ) -> list[object]:
     item = value.get(field_name)
     if not isinstance(item, list):
-        raise FrequencyContextError(
-            f"{field_name} must be a JSON array"
-        )
+        raise FrequencyContextError(f"{field_name} must be a JSON array")
     return cast(list[object], item)
 
 
@@ -367,9 +317,7 @@ def _required_text(
 ) -> str:
     item = value.get(field_name)
     if not isinstance(item, str) or not item.strip():
-        raise FrequencyContextError(
-            f"{field_name} must be a non-empty string"
-        )
+        raise FrequencyContextError(f"{field_name} must be a non-empty string")
     return item
 
 
@@ -379,9 +327,7 @@ def _required_int(
 ) -> int:
     item = value.get(field_name)
     if not isinstance(item, int) or isinstance(item, bool):
-        raise FrequencyContextError(
-            f"{field_name} must be an integer"
-        )
+        raise FrequencyContextError(f"{field_name} must be an integer")
     return item
 
 
@@ -393,13 +339,9 @@ def _required_decimal(
     try:
         parsed = Decimal(text)
     except InvalidOperation as error:
-        raise FrequencyContextError(
-            f"{field_name} must contain a decimal string"
-        ) from error
+        raise FrequencyContextError(f"{field_name} must contain a decimal string") from error
     if not parsed.is_finite():
-        raise FrequencyContextError(
-            f"{field_name} must be finite"
-        )
+        raise FrequencyContextError(f"{field_name} must be finite")
     return parsed
 
 
@@ -408,9 +350,7 @@ def _require_positive_finite(
     field_name: str,
 ) -> None:
     if not value.is_finite() or value <= _ZERO:
-        raise FrequencyContextError(
-            f"{field_name} must be positive and finite"
-        )
+        raise FrequencyContextError(f"{field_name} must be positive and finite")
 
 
 def _require_nonnegative_finite(
@@ -418,6 +358,4 @@ def _require_nonnegative_finite(
     field_name: str,
 ) -> None:
     if not value.is_finite() or value < _ZERO:
-        raise FrequencyContextError(
-            f"{field_name} must be non-negative and finite"
-        )
+        raise FrequencyContextError(f"{field_name} must be non-negative and finite")
