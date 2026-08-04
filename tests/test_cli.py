@@ -49,37 +49,27 @@ def _repository_report(root: Path) -> RepositoryContractReport:
         components=(
             VerifiedComponent(
                 component_id="canonical-observation-dataset",
-                artifact_path=PurePosixPath(
-                    "data/raw/wow_6equj5.csv"
-                ),
+                artifact_path=PurePosixPath("data/raw/wow_6equj5.csv"),
                 record_count=6,
             ),
             VerifiedComponent(
                 component_id="international-morse-registry",
-                artifact_path=PurePosixPath(
-                    "data/reference/itu_m1677_1_morse_symbols.json"
-                ),
+                artifact_path=PurePosixPath("data/reference/itu_m1677_1_morse_symbols.json"),
                 record_count=51,
             ),
             VerifiedComponent(
                 component_id="frequency-context",
-                artifact_path=PurePosixPath(
-                    "data/reference/frequency_context.json"
-                ),
+                artifact_path=PurePosixPath("data/reference/frequency_context.json"),
                 record_count=3,
             ),
             VerifiedComponent(
                 component_id="claim-ledger",
-                artifact_path=PurePosixPath(
-                    "data/reference/claim_ledger.json"
-                ),
+                artifact_path=PurePosixPath("data/reference/claim_ledger.json"),
                 record_count=12,
             ),
             VerifiedComponent(
                 component_id="hypothesis-matrix",
-                artifact_path=PurePosixPath(
-                    "data/reference/hypothesis_matrix.json"
-                ),
+                artifact_path=PurePosixPath("data/reference/hypothesis_matrix.json"),
                 record_count=5,
             ),
         ),
@@ -90,9 +80,7 @@ def _checksum_artifact(
     source: GeneratedArtifact,
     checksum_path: PurePosixPath,
 ) -> GeneratedArtifact:
-    content = (
-        f"{source.sha256_hex}  {source.relative_path.name}\n"
-    ).encode("ascii")
+    content = (f"{source.sha256_hex}  {source.relative_path.name}\n").encode("ascii")
 
     return GeneratedArtifact(
         relative_path=checksum_path,
@@ -115,10 +103,7 @@ def _svg_artifact(
                 f'{figure_id}-description">'
             ),
             f'<title id="{figure_id}-title">{title}</title>',
-            (
-                f'<desc id="{figure_id}-description">'
-                f"Test figure.</desc>"
-            ),
+            (f'<desc id="{figure_id}-description">Test figure.</desc>'),
             "</svg>",
             "",
         )
@@ -207,9 +192,7 @@ def _write_results(
     return tuple(
         ArtifactWriteResult(
             relative_path=artifact.relative_path,
-            absolute_path=(
-                root.joinpath(*artifact.relative_path.parts).resolve()
-            ),
+            absolute_path=(root.joinpath(*artifact.relative_path.parts).resolve()),
             media_type=artifact.media_type,
             byte_count=artifact.byte_count,
             sha256_hex=sha256(artifact.content).hexdigest(),
@@ -300,9 +283,7 @@ def test_verify_command_emits_human_readable_text(
     )
 
     assert status == 0
-    assert stdout.getvalue().startswith(
-        "Repository contract: verified\n"
-    )
+    assert stdout.getvalue().startswith("Repository contract: verified\n")
     assert "Printer sequence: 6EQUJ5\n" in stdout.getvalue()
     assert "Canonical records: 77\n" in stdout.getvalue()
 
@@ -397,9 +378,7 @@ def test_audit_command_can_allow_extra_files(
 
     assert status == 0
     assert captured["strict_directory"] is False
-    assert stdout.getvalue().startswith(
-        "Generated artifact audit: verified\n"
-    )
+    assert stdout.getvalue().startswith("Generated artifact audit: verified\n")
     assert "Directory inventory: allow-extra-files\n" in stdout.getvalue()
     assert "Payload artifacts: 8\n" in stdout.getvalue()
 
@@ -544,9 +523,7 @@ def test_generate_check_verifies_without_writing(
     assert payload["action"] == "check"
     assert payload["result"] == "verified"
     assert payload["artifact_count"] == 10
-    assert tuple(
-        artifact["relative_path"] for artifact in payload["artifacts"]
-    ) == (
+    assert tuple(artifact["relative_path"] for artifact in payload["artifacts"]) == (
         "artifacts/generated/analysis_snapshot.json",
         "artifacts/generated/analysis_snapshot.sha256",
         "artifacts/generated/analysis_report.md",
@@ -585,9 +562,7 @@ def test_execution_error_returns_nonzero_status(
 
     assert status == 1
     assert stdout.getvalue() == ""
-    assert stderr.getvalue() == (
-        "error: canonical contract failed\n"
-    )
+    assert stderr.getvalue() == ("error: canonical contract failed\n")
 
 
 def test_invalid_gaussian_search_configuration_fails_before_execution(
