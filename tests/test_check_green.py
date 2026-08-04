@@ -18,9 +18,7 @@ def _load_check_green() -> ModuleType:
         _SCRIPT_PATH,
     )
     if spec is None or spec.loader is None:
-        raise AssertionError(
-            "unable to load check_green.py"
-        )
+        raise AssertionError("unable to load check_green.py")
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -43,9 +41,7 @@ def test_default_gate_order_is_deterministic(
         build_output_directory=tmp_path,
     )
 
-    assert tuple(
-        step.step_id for step in steps
-    ) == (
+    assert tuple(step.step_id for step in steps) == (
         "ruff-check",
         "ruff-format",
         "mypy",
@@ -72,10 +68,7 @@ def test_default_gate_order_is_deterministic(
         "-m",
         "wow_signal_analysis.release_verification",
     )
-    assert (
-        str(_REPOSITORY_ROOT.resolve())
-        in steps[-1].command
-    )
+    assert str(_REPOSITORY_ROOT.resolve()) in steps[-1].command
 
 
 def test_build_step_can_be_skipped(
@@ -88,9 +81,7 @@ def test_build_step_can_be_skipped(
         include_build=False,
     )
 
-    assert "package-build" not in {
-        step.step_id for step in steps
-    }
+    assert "package-build" not in {step.step_id for step in steps}
     assert len(steps) == 6
     assert steps[-1].step_id == "release-reproduction"
 
@@ -106,17 +97,11 @@ def test_successful_gate_runs_every_step(
         **kwargs: object,
     ) -> subprocess.CompletedProcess[bytes]:
         commands.append(command)
-        assert (
-            kwargs["cwd"]
-            == _REPOSITORY_ROOT.resolve()
-        )
+        assert kwargs["cwd"] == _REPOSITORY_ROOT.resolve()
         assert kwargs["check"] is False
 
         environment = kwargs["env"]
-        assert (
-            str(_REPOSITORY_ROOT / "src")
-            in environment["PYTHONPATH"]
-        )
+        assert str(_REPOSITORY_ROOT / "src") in environment["PYTHONPATH"]
         return subprocess.CompletedProcess(
             command,
             0,
@@ -143,9 +128,7 @@ def test_gate_stops_at_first_failure_by_default(
     monkeypatch: pytest.MonkeyPatch,
     check_green: ModuleType,
 ) -> None:
-    return_codes = iter(
-        (0, 7, 0, 0, 0, 0, 0)
-    )
+    return_codes = iter((0, 7, 0, 0, 0, 0, 0))
 
     def fake_run(
         command: tuple[str, ...],
@@ -170,19 +153,14 @@ def test_gate_stops_at_first_failure_by_default(
     assert not report.passed
     assert len(report.results) == 2
     assert report.planned_step_count == 7
-    assert tuple(
-        result.step.step_id
-        for result in report.failed_results
-    ) == ("ruff-format",)
+    assert tuple(result.step.step_id for result in report.failed_results) == ("ruff-format",)
 
 
 def test_continue_on_failure_runs_the_complete_gate(
     monkeypatch: pytest.MonkeyPatch,
     check_green: ModuleType,
 ) -> None:
-    return_codes = iter(
-        (1, 0, 2, 0, 0, 3)
-    )
+    return_codes = iter((1, 0, 2, 0, 0, 3))
 
     def fake_run(
         command: tuple[str, ...],
@@ -207,10 +185,7 @@ def test_continue_on_failure_runs_the_complete_gate(
 
     assert not report.passed
     assert len(report.results) == 6
-    assert tuple(
-        result.step.step_id
-        for result in report.failed_results
-    ) == (
+    assert tuple(result.step.step_id for result in report.failed_results) == (
         "ruff-check",
         "mypy",
         "release-reproduction",
@@ -241,16 +216,14 @@ def test_main_returns_green_and_red_statuses(
         label="Test",
         command=("python", "-V"),
     )
-    successful_report = (
-        check_green.GreenCheckReport(
-            planned_step_count=1,
-            results=(
-                check_green.CheckResult(
-                    step=successful_step,
-                    return_code=0,
-                ),
+    successful_report = check_green.GreenCheckReport(
+        planned_step_count=1,
+        results=(
+            check_green.CheckResult(
+                step=successful_step,
+                return_code=0,
             ),
-        )
+        ),
     )
     monkeypatch.setattr(
         check_green,
@@ -258,16 +231,8 @@ def test_main_returns_green_and_red_statuses(
         lambda *args, **kwargs: successful_report,
     )
 
-    assert (
-        check_green.main(
-            ["--root", str(_REPOSITORY_ROOT)]
-        )
-        == 0
-    )
-    assert (
-        "QUALITY GATE: GREEN (1/1)"
-        in capsys.readouterr().out
-    )
+    assert check_green.main(["--root", str(_REPOSITORY_ROOT)]) == 0
+    assert "QUALITY GATE: GREEN (1/1)" in capsys.readouterr().out
 
     failed_report = check_green.GreenCheckReport(
         planned_step_count=1,
@@ -284,13 +249,5 @@ def test_main_returns_green_and_red_statuses(
         lambda *args, **kwargs: failed_report,
     )
 
-    assert (
-        check_green.main(
-            ["--root", str(_REPOSITORY_ROOT)]
-        )
-        == 1
-    )
-    assert (
-        "QUALITY GATE: RED (test"
-        in capsys.readouterr().err
-    )
+    assert check_green.main(["--root", str(_REPOSITORY_ROOT)]) == 1
+    assert "QUALITY GATE: RED (test" in capsys.readouterr().err
