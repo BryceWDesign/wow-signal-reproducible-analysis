@@ -78,22 +78,12 @@ class AuditedArtifact:
         normalized = PurePosixPath(self.relative_path)
         object.__setattr__(self, "relative_path", normalized)
 
-        if (
-            normalized.is_absolute()
-            or not normalized.parts
-            or ".." in normalized.parts
-        ):
-            raise ArtifactAuditError(
-                "audited artifact path must be repository-relative"
-            )
+        if normalized.is_absolute() or not normalized.parts or ".." in normalized.parts:
+            raise ArtifactAuditError("audited artifact path must be repository-relative")
         if not self.media_type.strip():
-            raise ArtifactAuditError(
-                "audited artifact media_type must be non-empty"
-            )
+            raise ArtifactAuditError("audited artifact media_type must be non-empty")
         if self.byte_count <= 0:
-            raise ArtifactAuditError(
-                "audited artifact byte_count must be positive"
-            )
+            raise ArtifactAuditError("audited artifact byte_count must be positive")
         if not _SHA256_PATTERN.fullmatch(self.sha256_hex):
             raise ArtifactAuditError(
                 "audited artifact sha256_hex must be a lowercase SHA-256 digest"
@@ -115,37 +105,22 @@ class ArtifactAuditReport:
 
     def __post_init__(self) -> None:
         if self.audit_id != ARTIFACT_AUDIT_ID:
-            raise ArtifactAuditError(
-                f"audit_id must be {ARTIFACT_AUDIT_ID!r}"
-            )
+            raise ArtifactAuditError(f"audit_id must be {ARTIFACT_AUDIT_ID!r}")
         if not self.repository_root.is_absolute():
-            raise ArtifactAuditError(
-                "repository_root must be absolute"
-            )
+            raise ArtifactAuditError("repository_root must be absolute")
         if self.bundle_id != ANALYSIS_ARTIFACT_BUNDLE_ID:
-            raise ArtifactAuditError(
-                f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}"
-            )
+            raise ArtifactAuditError(f"bundle_id must be {ANALYSIS_ARTIFACT_BUNDLE_ID!r}")
         if self.analysis_id != ANALYSIS_SNAPSHOT_ID:
-            raise ArtifactAuditError(
-                f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}"
-            )
+            raise ArtifactAuditError(f"analysis_id must be {ANALYSIS_SNAPSHOT_ID!r}")
         if self.manifest_byte_count <= 0:
-            raise ArtifactAuditError(
-                "manifest_byte_count must be positive"
-            )
+            raise ArtifactAuditError("manifest_byte_count must be positive")
         if not _SHA256_PATTERN.fullmatch(self.manifest_sha256_hex):
-            raise ArtifactAuditError(
-                "manifest_sha256_hex must be a lowercase SHA-256 digest"
-            )
+            raise ArtifactAuditError("manifest_sha256_hex must be a lowercase SHA-256 digest")
         if not isinstance(self.strict_directory, bool):
-            raise ArtifactAuditError(
-                "strict_directory must be a boolean"
-            )
+            raise ArtifactAuditError("strict_directory must be a boolean")
 
         actual_spec = tuple(
-            (artifact.relative_path, artifact.media_type)
-            for artifact in self.artifacts
+            (artifact.relative_path, artifact.media_type) for artifact in self.artifacts
         )
         if actual_spec != _CANONICAL_PAYLOAD_SPEC:
             raise ArtifactAuditError(
@@ -172,14 +147,11 @@ class ArtifactAuditReport:
 
         normalized = PurePosixPath(relative_path)
         matches = tuple(
-            artifact
-            for artifact in self.artifacts
-            if artifact.relative_path == normalized
+            artifact for artifact in self.artifacts if artifact.relative_path == normalized
         )
         if len(matches) != 1:
             raise ArtifactAuditError(
-                f"expected one audited artifact for {normalized}, "
-                f"found {len(matches)}"
+                f"expected one audited artifact for {normalized}, found {len(matches)}"
             )
         return matches[0]
 
@@ -204,15 +176,11 @@ def audit_generated_artifacts(
     """Verify the manifest, every payload hash, and all detached checksums."""
 
     if not isinstance(strict_directory, bool):
-        raise ArtifactAuditError(
-            "strict_directory must be a boolean"
-        )
+        raise ArtifactAuditError("strict_directory must be a boolean")
 
     root = repository_root.resolve()
     if not root.is_dir():
-        raise ArtifactAuditError(
-            f"repository_root must be an existing directory: {root}"
-        )
+        raise ArtifactAuditError(f"repository_root must be an existing directory: {root}")
 
     generated_directory = _generated_directory(root)
     manifest_path = _absolute_artifact_path(
@@ -302,13 +270,9 @@ def _parse_manifest(content: bytes) -> AnalysisBundleManifest:
     try:
         payload: object = json.loads(content.decode("utf-8"))
     except UnicodeDecodeError as error:
-        raise ArtifactAuditError(
-            "bundle manifest must contain valid UTF-8"
-        ) from error
+        raise ArtifactAuditError("bundle manifest must contain valid UTF-8") from error
     except json.JSONDecodeError as error:
-        raise ArtifactAuditError(
-            "bundle manifest must contain valid JSON"
-        ) from error
+        raise ArtifactAuditError("bundle manifest must contain valid JSON") from error
 
     root = _require_mapping(payload, "bundle manifest")
     _require_exact_keys(
@@ -326,14 +290,10 @@ def _parse_manifest(content: bytes) -> AnalysisBundleManifest:
 
     raw_artifacts = root["artifacts"]
     if not isinstance(raw_artifacts, list):
-        raise ArtifactAuditError(
-            "bundle manifest artifacts must be a JSON array"
-        )
+        raise ArtifactAuditError("bundle manifest artifacts must be a JSON array")
 
     entries = tuple(
-        _parse_manifest_entry(
-            _require_mapping(item, "bundle manifest entry")
-        )
+        _parse_manifest_entry(_require_mapping(item, "bundle manifest entry"))
         for item in raw_artifacts
     )
 
@@ -379,9 +339,7 @@ def _parse_manifest_entry(
 
     try:
         return BundleManifestEntry(
-            relative_path=PurePosixPath(
-                _required_text(value, "relative_path")
-            ),
+            relative_path=PurePosixPath(_required_text(value, "relative_path")),
             media_type=_required_text(value, "media_type"),
             byte_count=_required_int(value, "byte_count"),
             sha256_hex=_required_text(value, "sha256"),
@@ -394,18 +352,12 @@ def _require_canonical_manifest(
     manifest: AnalysisBundleManifest,
 ) -> None:
     if manifest.schema_version != ANALYSIS_BUNDLE_MANIFEST_SCHEMA_VERSION:
-        raise ArtifactAuditError(
-            "bundle manifest schema does not match the canonical schema"
-        )
+        raise ArtifactAuditError("bundle manifest schema does not match the canonical schema")
 
-    actual_spec = tuple(
-        (entry.relative_path, entry.media_type)
-        for entry in manifest.artifacts
-    )
+    actual_spec = tuple((entry.relative_path, entry.media_type) for entry in manifest.artifacts)
     if actual_spec != _CANONICAL_PAYLOAD_SPEC:
         raise ArtifactAuditError(
-            "bundle manifest does not preserve the canonical payload paths, "
-            "media types, and order"
+            "bundle manifest does not preserve the canonical payload paths, media types, and order"
         )
 
 
@@ -432,34 +384,25 @@ def _require_checksum_content(
 ) -> None:
     expected = f"{digest}  {source_name}\n".encode("ascii")
     if content != expected:
-        raise ArtifactAuditError(
-            f"{label} does not match the source digest and basename"
-        )
+        raise ArtifactAuditError(f"{label} does not match the source digest and basename")
 
 
 def _generated_directory(root: Path) -> Path:
     directory = root.joinpath(*ANALYSIS_ARTIFACT_DIRECTORY.parts)
     if directory.is_symlink():
-        raise ArtifactAuditError(
-            "generated artifact directory must not be a symbolic link"
-        )
+        raise ArtifactAuditError("generated artifact directory must not be a symbolic link")
     if not directory.is_dir():
         raise ArtifactAuditError(
-            f"generated artifact directory is missing: "
-            f"{ANALYSIS_ARTIFACT_DIRECTORY}"
+            f"generated artifact directory is missing: {ANALYSIS_ARTIFACT_DIRECTORY}"
         )
 
     try:
         resolved = directory.resolve(strict=True)
     except OSError as error:
-        raise ArtifactAuditError(
-            "unable to resolve generated artifact directory"
-        ) from error
+        raise ArtifactAuditError("unable to resolve generated artifact directory") from error
 
     if not resolved.is_relative_to(root):
-        raise ArtifactAuditError(
-            "generated artifact directory escapes repository_root"
-        )
+        raise ArtifactAuditError("generated artifact directory escapes repository_root")
     return resolved
 
 
@@ -467,14 +410,8 @@ def _absolute_artifact_path(
     root: Path,
     relative_path: PurePosixPath,
 ) -> Path:
-    if (
-        relative_path.is_absolute()
-        or not relative_path.parts
-        or ".." in relative_path.parts
-    ):
-        raise ArtifactAuditError(
-            f"unsafe repository-relative artifact path: {relative_path}"
-        )
+    if relative_path.is_absolute() or not relative_path.parts or ".." in relative_path.parts:
+        raise ArtifactAuditError(f"unsafe repository-relative artifact path: {relative_path}")
 
     candidate = root.joinpath(*relative_path.parts)
     parent = candidate.parent
@@ -486,27 +423,19 @@ def _absolute_artifact_path(
         ) from error
 
     if not resolved_parent.is_relative_to(root):
-        raise ArtifactAuditError(
-            f"artifact path escapes repository_root: {relative_path}"
-        )
+        raise ArtifactAuditError(f"artifact path escapes repository_root: {relative_path}")
     return resolved_parent / candidate.name
 
 
 def _read_regular_file(path: Path, label: str) -> bytes:
     if path.is_symlink():
-        raise ArtifactAuditError(
-            f"{label} must not be a symbolic link"
-        )
+        raise ArtifactAuditError(f"{label} must not be a symbolic link")
     if not path.is_file():
-        raise ArtifactAuditError(
-            f"{label} is missing or is not a regular file"
-        )
+        raise ArtifactAuditError(f"{label} is missing or is not a regular file")
     try:
         return path.read_bytes()
     except OSError as error:
-        raise ArtifactAuditError(
-            f"unable to read {label}"
-        ) from error
+        raise ArtifactAuditError(f"unable to read {label}") from error
 
 
 def _require_exact_directory_inventory(
@@ -516,22 +445,18 @@ def _require_exact_directory_inventory(
     actual_paths: set[PurePosixPath] = set()
 
     for path in generated_directory.rglob("*"):
-        relative_path = PurePosixPath(
-            *path.relative_to(root).parts
-        )
+        relative_path = PurePosixPath(*path.relative_to(root).parts)
         if path.is_symlink():
             raise ArtifactAuditError(
                 f"generated directory contains a symbolic link: {relative_path}"
             )
         if path.is_dir():
             raise ArtifactAuditError(
-                f"generated directory contains an unexpected directory: "
-                f"{relative_path}"
+                f"generated directory contains an unexpected directory: {relative_path}"
             )
         if not path.is_file():
             raise ArtifactAuditError(
-                f"generated directory contains a non-regular entry: "
-                f"{relative_path}"
+                f"generated directory contains a non-regular entry: {relative_path}"
             )
         actual_paths.add(relative_path)
 
@@ -546,16 +471,11 @@ def _require_exact_directory_inventory(
     if unexpected or missing:
         details: list[str] = []
         if unexpected:
-            details.append(
-                "unexpected=" + ",".join(map(str, unexpected))
-            )
+            details.append("unexpected=" + ",".join(map(str, unexpected)))
         if missing:
-            details.append(
-                "missing=" + ",".join(map(str, missing))
-            )
+            details.append("missing=" + ",".join(map(str, missing)))
         raise ArtifactAuditError(
-            "generated artifact directory inventory mismatch: "
-            + "; ".join(details)
+            "generated artifact directory inventory mismatch: " + "; ".join(details)
         )
 
 
@@ -564,13 +484,9 @@ def _require_mapping(
     label: str,
 ) -> dict[str, object]:
     if not isinstance(value, dict):
-        raise ArtifactAuditError(
-            f"{label} must be a JSON object"
-        )
+        raise ArtifactAuditError(f"{label} must be a JSON object")
     if any(not isinstance(key, str) for key in value):
-        raise ArtifactAuditError(
-            f"{label} keys must be strings"
-        )
+        raise ArtifactAuditError(f"{label} keys must be strings")
     return cast(dict[str, object], value)
 
 
@@ -584,8 +500,7 @@ def _require_exact_keys(
         missing = sorted(expected - actual)
         unexpected = sorted(actual - expected)
         raise ArtifactAuditError(
-            f"{label} fields differ from the schema: "
-            f"missing={missing}, unexpected={unexpected}"
+            f"{label} fields differ from the schema: missing={missing}, unexpected={unexpected}"
         )
 
 
@@ -595,9 +510,7 @@ def _required_text(
 ) -> str:
     item = value.get(field_name)
     if not isinstance(item, str) or not item.strip():
-        raise ArtifactAuditError(
-            f"{field_name} must be a non-empty string"
-        )
+        raise ArtifactAuditError(f"{field_name} must be a non-empty string")
     return item
 
 
@@ -607,7 +520,5 @@ def _required_int(
 ) -> int:
     item = value.get(field_name)
     if not isinstance(item, int) or isinstance(item, bool):
-        raise ArtifactAuditError(
-            f"{field_name} must be an integer"
-        )
+        raise ArtifactAuditError(f"{field_name} must be an integer")
     return item
