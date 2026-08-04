@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -36,9 +37,7 @@ def _checksum_artifact(
     return GeneratedArtifact(
         relative_path=checksum_path,
         media_type="text/plain",
-        content=(
-            f"{source.sha256_hex}  {source.relative_path.name}\n"
-        ).encode("ascii"),
+        content=(f"{source.sha256_hex}  {source.relative_path.name}\n").encode("ascii"),
     )
 
 
@@ -97,9 +96,7 @@ def _write_artifacts(
     generated.mkdir(parents=True)
 
     for artifact in selected_payload:
-        root.joinpath(*artifact.relative_path.parts).write_bytes(
-            artifact.content
-        )
+        root.joinpath(*artifact.relative_path.parts).write_bytes(artifact.content)
 
     _rewrite_manifest(root, selected_payload)
     return selected_payload
@@ -119,12 +116,8 @@ def _rewrite_manifest(
         manifest,
         ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
     )
-    root.joinpath(*manifest.relative_path.parts).write_bytes(
-        manifest.content
-    )
-    root.joinpath(*checksum.relative_path.parts).write_bytes(
-        checksum.content
-    )
+    root.joinpath(*manifest.relative_path.parts).write_bytes(manifest.content)
+    root.joinpath(*checksum.relative_path.parts).write_bytes(checksum.content)
 
 
 def test_audit_verifies_manifest_payloads_and_checksums(
@@ -139,31 +132,21 @@ def test_audit_verifies_manifest_payloads_and_checksums(
     assert report.analysis_id == "wow-signal-canonical-analysis-v1"
     assert report.artifact_count == 8
     assert report.strict_directory
-    assert report.total_byte_count == sum(
-        artifact.byte_count for artifact in report.artifacts
-    )
-    assert report.artifact_by_path(
-        ANALYSIS_REPORT_ARTIFACT_PATH
-    ).media_type == "text/markdown"
+    assert report.total_byte_count == sum(artifact.byte_count for artifact in report.artifacts)
+    assert report.artifact_by_path(ANALYSIS_REPORT_ARTIFACT_PATH).media_type == "text/markdown"
 
 
 def test_manifest_loader_preserves_declared_content_identity(
     tmp_path: Path,
 ) -> None:
     payload = _write_artifacts(tmp_path)
-    manifest_path = tmp_path.joinpath(
-        *ANALYSIS_BUNDLE_MANIFEST_PATH.parts
-    )
+    manifest_path = tmp_path.joinpath(*ANALYSIS_BUNDLE_MANIFEST_PATH.parts)
 
     manifest = load_analysis_bundle_manifest(manifest_path)
 
     assert manifest.artifact_count == 8
-    assert manifest.total_byte_count == sum(
-        artifact.byte_count for artifact in payload
-    )
-    assert tuple(
-        entry.relative_path for entry in manifest.artifacts
-    ) == tuple(
+    assert manifest.total_byte_count == sum(artifact.byte_count for artifact in payload)
+    assert tuple(entry.relative_path for entry in manifest.artifacts) == tuple(
         artifact.relative_path for artifact in payload
     )
 
@@ -172,14 +155,12 @@ def test_audit_detects_payload_tampering(
     tmp_path: Path,
 ) -> None:
     _write_artifacts(tmp_path)
-    report_path = tmp_path.joinpath(
-        *ANALYSIS_REPORT_ARTIFACT_PATH.parts
-    )
+    report_path = tmp_path.joinpath(*ANALYSIS_REPORT_ARTIFACT_PATH.parts)
     report_path.write_bytes(b"# Tampered report\n")
 
     with pytest.raises(
         ArtifactAuditError,
-        match="mismatch for artifacts/generated/analysis_report.md",
+        match=re.escape("mismatch for artifacts/generated/analysis_report.md"),
     ):
         audit_generated_artifacts(tmp_path)
 
@@ -188,9 +169,7 @@ def test_audit_detects_manifest_checksum_tampering(
     tmp_path: Path,
 ) -> None:
     _write_artifacts(tmp_path)
-    checksum_path = tmp_path.joinpath(
-        *ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH.parts
-    )
+    checksum_path = tmp_path.joinpath(*ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH.parts)
     checksum_path.write_text(
         "0" * 64 + "  artifact_manifest.json\n",
         encoding="ascii",
@@ -210,19 +189,15 @@ def test_audit_checks_detached_checksum_semantics(
     invalid_checksum = GeneratedArtifact(
         relative_path=ANALYSIS_SNAPSHOT_CHECKSUM_PATH,
         media_type="text/plain",
-        content=(
-            "0" * 64 + "  analysis_snapshot.json\n"
-        ).encode("ascii"),
+        content=("0" * 64 + "  analysis_snapshot.json\n").encode("ascii"),
     )
     payload[1] = invalid_checksum
-    tmp_path.joinpath(
-        *invalid_checksum.relative_path.parts
-    ).write_bytes(invalid_checksum.content)
+    tmp_path.joinpath(*invalid_checksum.relative_path.parts).write_bytes(invalid_checksum.content)
     _rewrite_manifest(tmp_path, tuple(payload))
 
     with pytest.raises(
         ArtifactAuditError,
-        match="analysis_snapshot.sha256 does not match",
+        match=re.escape("analysis_snapshot.sha256 does not match"),
     ):
         audit_generated_artifacts(tmp_path)
 
@@ -255,9 +230,7 @@ def test_manifest_rejects_path_traversal_even_with_valid_checksum(
     tmp_path: Path,
 ) -> None:
     _write_artifacts(tmp_path)
-    manifest_path = tmp_path.joinpath(
-        *ANALYSIS_BUNDLE_MANIFEST_PATH.parts
-    )
+    manifest_path = tmp_path.joinpath(*ANALYSIS_BUNDLE_MANIFEST_PATH.parts)
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["artifacts"][0]["relative_path"] = "../escape.json"
     manifest_content = (
@@ -279,9 +252,7 @@ def test_manifest_rejects_path_traversal_even_with_valid_checksum(
         manifest_artifact,
         ANALYSIS_BUNDLE_MANIFEST_CHECKSUM_PATH,
     )
-    tmp_path.joinpath(*checksum.relative_path.parts).write_bytes(
-        checksum.content
-    )
+    tmp_path.joinpath(*checksum.relative_path.parts).write_bytes(checksum.content)
 
     with pytest.raises(
         ArtifactAuditError,
@@ -294,9 +265,7 @@ def test_manifest_rejects_unknown_fields_and_declared_count_drift(
     tmp_path: Path,
 ) -> None:
     _write_artifacts(tmp_path)
-    manifest_path = tmp_path.joinpath(
-        *ANALYSIS_BUNDLE_MANIFEST_PATH.parts
-    )
+    manifest_path = tmp_path.joinpath(*ANALYSIS_BUNDLE_MANIFEST_PATH.parts)
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["unexpected"] = True
     manifest_path.write_text(
@@ -328,13 +297,11 @@ def test_audit_rejects_missing_payload_artifact(
     tmp_path: Path,
 ) -> None:
     _write_artifacts(tmp_path)
-    missing_path = tmp_path.joinpath(
-        *ANALYSIS_MODEL_COMPARISON_FIGURE_PATH.parts
-    )
+    missing_path = tmp_path.joinpath(*ANALYSIS_MODEL_COMPARISON_FIGURE_PATH.parts)
     missing_path.unlink()
 
     with pytest.raises(
         ArtifactAuditError,
-        match="model_comparison.svg is missing",
+        match=re.escape("model_comparison.svg is missing"),
     ):
         audit_generated_artifacts(tmp_path)
